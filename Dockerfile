@@ -6,17 +6,26 @@ RUN apk add --no-cache git
 WORKDIR /tmp/app
 
 # We want to populate the module cache based on the go.{mod,sum} files.
-#COPY go.mod .
-#COPY go.sum .
-#RUN go mod download
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
 
 COPY . .
 
+ARG project
+ENV PROJECT $project
+
+# Set the Go environment
+ENV GOOS linux
+ENV CGO_ENABLED 0
+ENV GOARCH amd64
+
+
 # Unit tests
-RUN CGO_ENABLED=0 go test -v
+RUN go test -v $project
 
 # Build the Go app
-RUN go build -o ./out/app .
+RUN go build -o ./out/app $project
 
 # Start fresh from a smaller image
 FROM alpine:3.9 

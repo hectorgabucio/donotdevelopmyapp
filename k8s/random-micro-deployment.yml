@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: random-micro
+spec:
+  selector:
+    matchLabels:
+      run: random-micro
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        run: random-micro
+    spec:
+      containers:
+      - name: random-micro
+        image: hectorgabucio/random-micro
+        ports:
+        - containerPort: 8080

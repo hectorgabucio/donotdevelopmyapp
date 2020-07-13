@@ -29,7 +29,7 @@ func (rh *randomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 
-	conn, err := grpc.Dial(os.Getenv("RANDOM_MICRO"), grpc.WithInsecure())
+	conn, err := grpc.Dial(os.Getenv("RANDOM_MICRO_SERVICE_HOST")+":"+os.Getenv("RANDOM_MICRO_SERVICE_PORT"), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}

@@ -22,7 +22,7 @@ ENV GOARCH amd64
 
 
 # Unit tests
-RUN go test -v $project
+#RUN go test -v $project
 
 # Build the Go app
 RUN go build -o ./out/app $project

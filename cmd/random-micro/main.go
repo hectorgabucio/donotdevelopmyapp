@@ -6,15 +6,15 @@ import (
 	"log"
 	"net"
 
-	"github.com/hectorgabucio/donotdevelopmyapp/pkg/chat"
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/hectorgabucio/donotdevelopmyapp/pkg/random"
 	"google.golang.org/grpc"
 )
 
-type chatHandler struct{}
+type randomHandler struct{}
 
-func (c chatHandler) SayHello(ctx context.Context, msg *chat.Message) (*chat.Message, error) {
-	log.Printf("Received message: %s", msg.String())
-	return &chat.Message{Body: "HELLOOOOO"}, nil
+func (c randomHandler) GetRandom(ctx context.Context, empty *empty.Empty) (*random.RandomNumber, error) {
+	return &random.RandomNumber{Number: 1}, nil
 }
 
 func main() {
@@ -24,11 +24,11 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := chatHandler{}
+	s := randomHandler{}
 
 	grpcServer := grpc.NewServer()
 
-	chat.RegisterChatServiceServer(grpcServer, &s)
+	random.RegisterRandomServiceServer(grpcServer, &s)
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)

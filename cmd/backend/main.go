@@ -7,23 +7,24 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/hectorgabucio/donotdevelopmyapp/pkg/chat"
+	"github.com/hectorgabucio/donotdevelopmyapp/pkg/random"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type randomHandler struct {
-	client chat.ChatServiceClient
+	client random.RandomServiceClient
 }
 
 func (rh *randomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	message, err := rh.client.SayHello(context.Background(), &chat.Message{Body: "hola"})
+	message, err := rh.client.GetRandom(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		log.Fatalf("error while saying hello to random micro %s", err)
 	}
 
 	log.Printf("Getting response from random micro: %s", message.String())
 
-	fmt.Fprintf(w, message.Body)
+	fmt.Fprint(w, message.String())
 }
 
 func main() {
@@ -35,7 +36,7 @@ func main() {
 	}
 
 	defer conn.Close()
-	client := chat.NewChatServiceClient(conn)
+	client := random.NewRandomServiceClient(conn)
 
 	rh := &randomHandler{client: client}
 

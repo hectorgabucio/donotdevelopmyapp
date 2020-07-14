@@ -16,31 +16,35 @@ type randomHandler struct {
 	client random.RandomServiceClient
 }
 
+func middlewareOne(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Received new request: %s", r.URL.RequestURI())
+		next.ServeHTTP(w, r)
+		log.Printf("Sending response...")
+	})
+}
+
 func (rh *randomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("New request: %s", r.URL.String())
 	message, err := rh.client.GetRandom(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		log.Fatalf("error while saying hello to random micro %s", err)
 	}
 
-	log.Printf("Getting response from random micro: %s", message.String())
-
 	fmt.Fprint(w, message.String())
 }
 
 func main() {
-	mux := http.NewServeMux()
-
 	conn, err := grpc.Dial(os.Getenv("RANDOM_MICRO_SERVICE_HOST")+":"+os.Getenv("RANDOM_MICRO_SERVICE_PORT"), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}
-
 	defer conn.Close()
 	client := random.NewRandomServiceClient(conn)
 
 	rh := &randomHandler{client: client}
+	randomHandler := http.HandlerFunc(rh.ServeHTTP)
 
-	mux.Handle("/random", rh)
+	mux := http.NewServeMux()
+	mux.Handle("/random", middlewareOne(randomHandler))
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log"
+	"math/big"
 	"net"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -14,7 +16,11 @@ import (
 type randomHandler struct{}
 
 func (c randomHandler) GetRandom(ctx context.Context, empty *empty.Empty) (*random.RandomNumber, error) {
-	return &random.RandomNumber{Number: 1}, nil
+	n, err := rand.Int(rand.Reader, big.NewInt(100))
+	if err != nil {
+		log.Fatalf("Error while calculating secure random number: %s", err)
+	}
+	return &random.RandomNumber{Number: n.Uint64()}, nil
 }
 
 func main() {

@@ -17,6 +17,7 @@ type randomHandler struct {
 }
 
 func (rh *randomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("New request: %s", r.URL.String())
 	message, err := rh.client.GetRandom(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		log.Fatalf("error while saying hello to random micro %s", err)
@@ -40,6 +41,6 @@ func main() {
 
 	rh := &randomHandler{client: client}
 
-	mux.Handle("/", rh)
+	mux.Handle("/random", rh)
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

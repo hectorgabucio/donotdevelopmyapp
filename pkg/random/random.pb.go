@@ -9,7 +9,7 @@ package random
 import (
 	context "context"
 	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
+	_ "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -77,6 +77,53 @@ func (x *RandomNumber) GetNumber() uint64 {
 	return 0
 }
 
+type RandomInput struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Max int64 `protobuf:"varint,1,opt,name=max,proto3" json:"max,omitempty"`
+}
+
+func (x *RandomInput) Reset() {
+	*x = RandomInput{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_random_random_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RandomInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RandomInput) ProtoMessage() {}
+
+func (x *RandomInput) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_random_random_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RandomInput.ProtoReflect.Descriptor instead.
+func (*RandomInput) Descriptor() ([]byte, []int) {
+	return file_pkg_random_random_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *RandomInput) GetMax() int64 {
+	if x != nil {
+		return x.Max
+	}
+	return 0
+}
+
 var File_pkg_random_random_proto protoreflect.FileDescriptor
 
 var file_pkg_random_random_proto_rawDesc = []byte{
@@ -86,12 +133,14 @@ var file_pkg_random_random_proto_rawDesc = []byte{
 	0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x26,
 	0x0a, 0x0c, 0x52, 0x61, 0x6e, 0x64, 0x6f, 0x6d, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x12, 0x16,
 	0x0a, 0x06, 0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06,
-	0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x32, 0x4c, 0x0a, 0x0d, 0x52, 0x61, 0x6e, 0x64, 0x6f, 0x6d,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3b, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x52, 0x61,
-	0x6e, 0x64, 0x6f, 0x6d, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x14, 0x2e, 0x72,
-	0x61, 0x6e, 0x64, 0x6f, 0x6d, 0x2e, 0x52, 0x61, 0x6e, 0x64, 0x6f, 0x6d, 0x4e, 0x75, 0x6d, 0x62,
-	0x65, 0x72, 0x22, 0x00, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x22, 0x1f, 0x0a, 0x0b, 0x52, 0x61, 0x6e, 0x64, 0x6f, 0x6d,
+	0x49, 0x6e, 0x70, 0x75, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x61, 0x78, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x03, 0x52, 0x03, 0x6d, 0x61, 0x78, 0x32, 0x49, 0x0a, 0x0d, 0x52, 0x61, 0x6e, 0x64, 0x6f,
+	0x6d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x38, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x52,
+	0x61, 0x6e, 0x64, 0x6f, 0x6d, 0x12, 0x13, 0x2e, 0x72, 0x61, 0x6e, 0x64, 0x6f, 0x6d, 0x2e, 0x52,
+	0x61, 0x6e, 0x64, 0x6f, 0x6d, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x1a, 0x14, 0x2e, 0x72, 0x61, 0x6e,
+	0x64, 0x6f, 0x6d, 0x2e, 0x52, 0x61, 0x6e, 0x64, 0x6f, 0x6d, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72,
+	0x22, 0x00, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -106,13 +155,13 @@ func file_pkg_random_random_proto_rawDescGZIP() []byte {
 	return file_pkg_random_random_proto_rawDescData
 }
 
-var file_pkg_random_random_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_pkg_random_random_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_pkg_random_random_proto_goTypes = []interface{}{
 	(*RandomNumber)(nil), // 0: random.RandomNumber
-	(*empty.Empty)(nil),  // 1: google.protobuf.Empty
+	(*RandomInput)(nil),  // 1: random.RandomInput
 }
 var file_pkg_random_random_proto_depIdxs = []int32{
-	1, // 0: random.RandomService.GetRandom:input_type -> google.protobuf.Empty
+	1, // 0: random.RandomService.GetRandom:input_type -> random.RandomInput
 	0, // 1: random.RandomService.GetRandom:output_type -> random.RandomNumber
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
@@ -139,6 +188,18 @@ func file_pkg_random_random_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_random_random_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RandomInput); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -146,7 +207,7 @@ func file_pkg_random_random_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_random_random_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -172,7 +233,7 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RandomServiceClient interface {
-	GetRandom(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*RandomNumber, error)
+	GetRandom(ctx context.Context, in *RandomInput, opts ...grpc.CallOption) (*RandomNumber, error)
 }
 
 type randomServiceClient struct {
@@ -183,7 +244,7 @@ func NewRandomServiceClient(cc grpc.ClientConnInterface) RandomServiceClient {
 	return &randomServiceClient{cc}
 }
 
-func (c *randomServiceClient) GetRandom(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*RandomNumber, error) {
+func (c *randomServiceClient) GetRandom(ctx context.Context, in *RandomInput, opts ...grpc.CallOption) (*RandomNumber, error) {
 	out := new(RandomNumber)
 	err := c.cc.Invoke(ctx, "/random.RandomService/GetRandom", in, out, opts...)
 	if err != nil {
@@ -194,14 +255,14 @@ func (c *randomServiceClient) GetRandom(ctx context.Context, in *empty.Empty, op
 
 // RandomServiceServer is the server API for RandomService service.
 type RandomServiceServer interface {
-	GetRandom(context.Context, *empty.Empty) (*RandomNumber, error)
+	GetRandom(context.Context, *RandomInput) (*RandomNumber, error)
 }
 
 // UnimplementedRandomServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedRandomServiceServer struct {
 }
 
-func (*UnimplementedRandomServiceServer) GetRandom(context.Context, *empty.Empty) (*RandomNumber, error) {
+func (*UnimplementedRandomServiceServer) GetRandom(context.Context, *RandomInput) (*RandomNumber, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRandom not implemented")
 }
 
@@ -210,7 +271,7 @@ func RegisterRandomServiceServer(s *grpc.Server, srv RandomServiceServer) {
 }
 
 func _RandomService_GetRandom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(RandomInput)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -222,7 +283,7 @@ func _RandomService_GetRandom_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: "/random.RandomService/GetRandom",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RandomServiceServer).GetRandom(ctx, req.(*empty.Empty))
+		return srv.(RandomServiceServer).GetRandom(ctx, req.(*RandomInput))
 	}
 	return interceptor(ctx, in, info, handler)
 }

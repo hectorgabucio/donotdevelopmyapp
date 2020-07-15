@@ -9,7 +9,6 @@ import (
 
 	"github.com/hectorgabucio/donotdevelopmyapp/pkg/random"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type randomHandler struct {
@@ -25,7 +24,7 @@ func middlewareOne(next http.Handler) http.Handler {
 }
 
 func (rh *randomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	message, err := rh.client.GetRandom(context.Background(), &emptypb.Empty{})
+	message, err := rh.client.GetRandom(context.Background(), &random.RandomInput{Max: 1000})
 	if err != nil {
 		log.Fatalf("error while saying hello to random micro %s", err)
 	}

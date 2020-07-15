@@ -8,6 +8,10 @@ message RandomNumber {
   uint64 number = 1;
 }
 
+message RandomInput {
+  int64 max = 1;
+}
+
 service RandomService {
-  rpc GetRandom(google.protobuf.Empty) returns (RandomNumber) {}
+  rpc GetRandom(RandomInput) returns (RandomNumber) {}
 }

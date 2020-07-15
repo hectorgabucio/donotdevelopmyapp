@@ -8,15 +8,14 @@ import (
 	"math/big"
 	"net"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hectorgabucio/donotdevelopmyapp/pkg/random"
 	"google.golang.org/grpc"
 )
 
 type randomHandler struct{}
 
-func (c randomHandler) GetRandom(ctx context.Context, empty *empty.Empty) (*random.RandomNumber, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(100))
+func (c randomHandler) GetRandom(ctx context.Context, input *random.RandomInput) (*random.RandomNumber, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(input.Max))
 	if err != nil {
 		log.Fatalf("Error while calculating secure random number: %s", err)
 	}

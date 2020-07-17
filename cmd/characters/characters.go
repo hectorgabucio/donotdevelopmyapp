@@ -25,6 +25,7 @@ type ApiClient struct {
 }
 
 func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*character.Output, error) {
+	log.Printf("received call for input %s", input.Number)
 
 	if x, found := a.Cache.Get(input.Number); found {
 		log.Println("Getting from cache...")

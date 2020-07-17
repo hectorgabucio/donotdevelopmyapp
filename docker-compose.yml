@@ -9,12 +9,19 @@ services:
     environment:
       - RANDOM_MICRO_SERVICE_HOST=random-micro
       - RANDOM_MICRO_SERVICE_PORT=8080
+      - CHARACTER_MICRO_SERVICE_HOST=character-micro
+      - CHARACTER_MICRO_SERVICE_PORT=8080
     ports:
       - 8081:8080
     depends_on:
       - random-micro
 
-
+  character-micro:
+      build:
+        context: .
+        dockerfile: ./Dockerfile
+        args:
+          project: ./cmd/characters/
 
   random-micro:
     build:

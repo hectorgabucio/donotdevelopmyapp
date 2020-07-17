@@ -6,13 +6,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
+	"github.com/hectorgabucio/donotdevelopmyapp/pkg/character"
 	"github.com/hectorgabucio/donotdevelopmyapp/pkg/random"
 	"google.golang.org/grpc"
 )
 
-type randomHandler struct {
-	client random.RandomServiceClient
+type app struct {
+	randomClient    random.RandomServiceClient
+	characterClient character.CharacterServiceClient
 }
 
 func middlewareOne(next http.Handler) http.Handler {
@@ -23,27 +26,41 @@ func middlewareOne(next http.Handler) http.Handler {
 	})
 }
 
-func (rh *randomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	message, err := rh.client.GetRandom(context.Background(), &random.RandomInput{Max: 1000})
+func (rh *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	message, err := rh.randomClient.GetRandom(context.Background(), &random.RandomInput{Max: 1000})
 	if err != nil {
 		log.Fatalf("error while saying hello to random micro %s", err)
 	}
 
-	fmt.Fprint(w, message.String())
+	numberStr := strconv.FormatUint(message.Number, 10)
+	character, err := rh.characterClient.GetCharacter(context.Background(), &character.Input{Number: numberStr})
+	if err != nil {
+		log.Fatalf("Error while getting random character %s", err)
+	}
+
+	fmt.Fprint(w, character.String())
 }
 
 func main() {
-	conn, err := grpc.Dial(os.Getenv("RANDOM_MICRO_SERVICE_HOST")+":"+os.Getenv("RANDOM_MICRO_SERVICE_PORT"), grpc.WithInsecure())
+
+	connRandom, err := grpc.Dial(os.Getenv("RANDOM_MICRO_SERVICE_HOST")+":"+os.Getenv("RANDOM_MICRO_SERVICE_PORT"), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}
-	defer conn.Close()
-	client := random.NewRandomServiceClient(conn)
+	defer connRandom.Close()
+	randomClient := random.NewRandomServiceClient(connRandom)
 
-	rh := &randomHandler{client: client}
-	randomHandler := http.HandlerFunc(rh.ServeHTTP)
+	connCharacter, err := grpc.Dial(os.Getenv("CHARACTER_MICRO_SERVICE_HOST")+":"+os.Getenv("CHARACTER_MICRO_SERVICE_PORT"), grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Error dial grpc: %s", err)
+	}
+	defer connCharacter.Close()
+	characterClient := character.NewCharacterServiceClient(connCharacter)
+
+	app := &app{randomClient: randomClient, characterClient: characterClient}
+	handler := http.HandlerFunc(app.ServeHTTP)
 
 	mux := http.NewServeMux()
-	mux.Handle("/random", middlewareOne(randomHandler))
+	mux.Handle("/random", middlewareOne(handler))
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

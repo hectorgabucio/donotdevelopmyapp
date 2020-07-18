@@ -1,5 +1,11 @@
 version: '3.2'
 services:
+
+  website:
+    build:
+      context: ./website
+    ports:
+      - 3000:80
   backend:
     build:
       context: .

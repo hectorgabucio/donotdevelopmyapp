@@ -6,6 +6,22 @@ services:
       context: ./website
     ports:
       - 3000:80
+
+  auth-micro:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        project: ./cmd/auth/
+    ports:
+       - 8082:8080
+    env_file:
+      ./auth.env
+    environment:
+      - REDIRECT_URL=http://localhost:8082/callback
+      - ACCESS_SECRET=thisisnotproductionlulz
+
+
   backend:
     build:
       context: .

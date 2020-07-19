@@ -9,6 +9,9 @@ services:
     environment:
       - AUTH_URL=http://auth-micro:8080/login
       - CALLBACK_URL=http://auth-micro:8080/callback
+
+
+
   auth-micro:
     build:
       context: .
@@ -20,6 +23,7 @@ services:
     environment:
       - REDIRECT_URL=http://localhost/callback
       - ACCESS_SECRET=thisisnotproductionlulz
+      - STATE_SECRET=thisisnotproductionlulz111111111
 
 
   backend:

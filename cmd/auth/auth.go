@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
@@ -48,7 +50,13 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	state := base64.URLEncoding.EncodeToString(b)
-	cookie := http.Cookie{Name: COOKIE_STATE_NAME, Value: state, Expires: expiration, HttpOnly: true, SameSite: http.SameSiteLaxMode}
+
+	encrypted, err := Encrypt([]byte(os.Getenv("STATE_SECRET")), b)
+	if err != nil {
+		log.Fatalf("Error encrypting state: %s\n", err)
+	}
+
+	cookie := http.Cookie{Name: COOKIE_STATE_NAME, Value: base64.URLEncoding.EncodeToString(encrypted), Expires: expiration, HttpOnly: true, SameSite: http.SameSiteLaxMode}
 	http.SetCookie(w, &cookie)
 
 	return state
@@ -69,7 +77,21 @@ func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.FormValue("state") != oauthState.Value {
+	oauthStateEncrypted, err := base64.URLEncoding.DecodeString(oauthState.Value)
+	if err != nil {
+		log.Printf("cant decode state cookie, %s\n", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	decryptedState, err := Decrypt([]byte(os.Getenv("STATE_SECRET")), oauthStateEncrypted)
+	if err != nil {
+		log.Printf("cant decrypt state cookie, %s\n", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	if r.FormValue("state") != base64.URLEncoding.EncodeToString(decryptedState) {
 		log.Println("invalid oauth google state")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
@@ -133,4 +155,42 @@ func getUserDataFromGoogle(code string) ([]byte, error) {
 		return nil, fmt.Errorf("failed read response: %s", err.Error())
 	}
 	return contents, nil
+}
+
+func Encrypt(key, data []byte) ([]byte, error) {
+	blockCipher, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(blockCipher)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err = rand.Read(nonce); err != nil {
+		return nil, err
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, data, nil)
+
+	return ciphertext, nil
+}
+
+func Decrypt(key, data []byte) ([]byte, error) {
+	blockCipher, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(blockCipher)
+	if err != nil {
+		return nil, err
+	}
+	nonce, ciphertext := data[:gcm.NonceSize()], data[gcm.NonceSize():]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return nil, err
+	}
+	return plaintext, nil
 }

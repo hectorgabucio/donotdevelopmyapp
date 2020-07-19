@@ -5,20 +5,20 @@ services:
     build:
       context: ./website
     ports:
-      - 3000:80
-
+      - 80:80
+    environment:
+      - AUTH_URL=http://auth-micro:8080/login
+      - CALLBACK_URL=http://auth-micro:8080/callback
   auth-micro:
     build:
       context: .
       dockerfile: ./Dockerfile
       args:
         project: ./cmd/auth/
-    ports:
-       - 8082:8080
     env_file:
       ./auth.env
     environment:
-      - REDIRECT_URL=http://localhost:8082/callback
+      - REDIRECT_URL=http://localhost/callback
       - ACCESS_SECRET=thisisnotproductionlulz
 
 

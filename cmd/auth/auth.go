@@ -30,7 +30,8 @@ var googleOauthConfig = &oauth2.Config{
 	Endpoint:     google.Endpoint,
 }
 
-const COOKIE_STATE_NAME = "donotdevelopmyapp_randomstate"
+const COOKIE_STATE_NAME = "DONOTDEVELOPMYAPPRANDOMSTATE"
+const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
 const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
 
 const EXPIRES = 24 * time.Hour
@@ -47,7 +48,7 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	state := base64.URLEncoding.EncodeToString(b)
-	cookie := http.Cookie{Name: COOKIE_STATE_NAME, Value: state, Expires: expiration}
+	cookie := http.Cookie{Name: COOKIE_STATE_NAME, Value: state, Expires: expiration, HttpOnly: true}
 	http.SetCookie(w, &cookie)
 
 	return state
@@ -60,14 +61,31 @@ func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
+	log.Println("ALL COOKIES")
+	log.Println(r.Cookies())
+	log.Println("ALL HEADERS")
+	log.Println(r.Header)
 	// Read oauthState from Cookie
-	oauthState, _ := r.Cookie(COOKIE_STATE_NAME)
+	//oauthState, err := r.Cookie(COOKIE_STATE_NAME)
 
-	if r.FormValue("state") != oauthState.Value {
-		log.Println("invalid oauth google state")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
+	/*
+		if err != nil {
+			log.Printf("error obtaining state cookie: %s", err)
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		}
+	*/
+
+	//log.Println("cookie state is ", oauthState.Value, "and url state is ", r.FormValue("state"), "and entire url is ", r.URL.RawPath, r.URL)
+
+	/*
+		if r.FormValue("state") != oauthState.Value {
+			log.Println("invalid oauth google state")
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		}
+
+	*/
 
 	data, err := getUserDataFromGoogle(r.FormValue("code"))
 	if err != nil {
@@ -88,6 +106,10 @@ func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "error while generating jwt: %s\n", err)
 		return
 	}
+
+	cookie := http.Cookie{Name: COOKIE_JWT_NAME, Value: token, Expires: time.Now().Add(EXPIRES), HttpOnly: true}
+	http.SetCookie(w, &cookie)
+
 	fmt.Fprint(w, token)
 
 }

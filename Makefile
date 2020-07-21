@@ -17,7 +17,7 @@ start: check-style
 .PHONY: golangci-lint
 golangci-lint:
 	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
+		echo "golangci-lint is not installed. Please see https://golangci-lint.run/usage/install/#ci-installation for installation instructions."; \
 		exit 1; \
 	fi; \
 

@@ -48,7 +48,10 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	var expiration = time.Now().Add(EXPIRES)
 
 	b := make([]byte, 16)
-	rand.Read(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatalf("Error creating random bytes: %s\n", err)
+	}
 	state := base64.URLEncoding.EncodeToString(b)
 
 	encrypted, err := Encrypt([]byte(os.Getenv("STATE_SECRET")), b)

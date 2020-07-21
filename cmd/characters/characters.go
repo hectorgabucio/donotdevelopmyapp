@@ -75,8 +75,6 @@ func main() {
 
 	character.RegisterCharacterServiceServer(grpcServer, app)
 
-	log.Println("Starting character microservice...")
-
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}

@@ -18,11 +18,18 @@ type app struct {
 	characterClient character.CharacterServiceClient
 }
 
-func middlewareOne(next http.Handler) http.Handler {
+func logMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received new request: %s", r.URL.RequestURI())
 		next.ServeHTTP(w, r)
 		log.Printf("Sending response...")
+	})
+}
+
+func securedMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("This request needs to be authenticated")
+		next.ServeHTTP(w, r)
 	})
 }
 
@@ -61,6 +68,6 @@ func main() {
 	handler := http.HandlerFunc(app.ServeHTTP)
 
 	mux := http.NewServeMux()
-	mux.Handle("/random", middlewareOne(handler))
+	mux.Handle("/random", securedMiddleware(logMiddleware(handler)))
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

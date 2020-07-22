@@ -10,13 +10,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/grpc"
 )
 
 type UserInfo struct {
@@ -38,10 +41,45 @@ const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_
 
 const EXPIRES = 24 * time.Hour
 
+// grpcHandlerFunc returns an http.Handler that delegates to grpcServer on incoming gRPC
+// connections or otherHandler otherwise. Copied from cockroachdb.
+func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO(tamird): point to merged gRPC code rather than a PR.
+		// This is a partial recreation of gRPC's internal checks https://github.com/grpc/grpc-go/pull/514/files#diff-95e9a25b738459a2d3030e1e6fa2a718R61
+		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+			grpcServer.ServeHTTP(w, r)
+		} else {
+			otherHandler.ServeHTTP(w, r)
+		}
+	})
+}
+
 func main() {
-	http.HandleFunc("/login", handleGoogleLogin)
-	http.HandleFunc("/callback", oauthGoogleCallback)
-	fmt.Println(http.ListenAndServe(":8080", nil))
+	//http.HandleFunc("/login", handleGoogleLogin)
+	//http.HandleFunc("/callback", oauthGoogleCallback)
+	//fmt.Println(http.ListenAndServe(":8080", nil))
+
+	conn, err := net.Listen("tcp", fmt.Sprintf(":%d", 8080))
+	if err != nil {
+		panic(err)
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/login", handleGoogleLogin)
+	mux.HandleFunc("/callback", oauthGoogleCallback)
+
+	grpcServer := grpc.NewServer()
+
+	srv := &http.Server{
+		Addr:    "localhost:8080",
+		Handler: grpcHandlerFunc(grpcServer, mux),
+	}
+
+	if err := srv.Serve(conn); err != nil {
+		panic(err)
+	}
+
 }
 
 func generateStateOauthCookie(w http.ResponseWriter) string {

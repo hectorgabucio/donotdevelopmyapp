@@ -33,8 +33,9 @@ RUN apk add ca-certificates
 
 COPY --from=build_base /tmp/app/out/app /app/app
 
-# This container exposes port 8080 to the outside world
+# This container exposes port 8080 and 8081 to the outside world
 EXPOSE 8080
+EXPOSE 8081
 
 # Run the binary program produced by `go install`
 CMD ["/app/app"]

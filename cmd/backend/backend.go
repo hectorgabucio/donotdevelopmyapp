@@ -8,14 +8,18 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/hectorgabucio/donotdevelopmyapp/pkg/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/pkg/character"
 	"github.com/hectorgabucio/donotdevelopmyapp/pkg/random"
 	"google.golang.org/grpc"
 )
 
+const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
+
 type app struct {
 	randomClient    random.RandomServiceClient
 	characterClient character.CharacterServiceClient
+	authClient      auth.AuthServiceClient
 }
 
 func logMiddleware(next http.Handler) http.Handler {
@@ -26,9 +30,22 @@ func logMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func securedMiddleware(next http.Handler) http.Handler {
+func (app *app) securedMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("This request needs to be authenticated")
+		authCookie, err := r.Cookie(COOKIE_JWT_NAME)
+		if err != nil {
+			log.Println("No cookie found on secure request, aborting")
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+		user, err := app.authClient.GetUser(context.Background(), &auth.Token{Value: authCookie.Value})
+		if err != nil {
+			log.Println("Error validating auth cookie, aborting", err)
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+		log.Println("Authorized, user is", user)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -64,10 +81,17 @@ func main() {
 	defer connCharacter.Close()
 	characterClient := character.NewCharacterServiceClient(connCharacter)
 
-	app := &app{randomClient: randomClient, characterClient: characterClient}
+	connAuth, err := grpc.Dial(os.Getenv("AUTH_MICRO_SERVICE_HOST")+":"+os.Getenv("AUTH_MICRO_SERVICE_PORT"), grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Error dial grpc: %s", err)
+	}
+	defer connAuth.Close()
+	authClient := auth.NewAuthServiceClient(connAuth)
+
+	app := &app{randomClient: randomClient, characterClient: characterClient, authClient: authClient}
 	handler := http.HandlerFunc(app.ServeHTTP)
 
 	mux := http.NewServeMux()
-	mux.Handle("/random", securedMiddleware(logMiddleware(handler)))
+	mux.Handle("/random", app.securedMiddleware(logMiddleware(handler)))
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

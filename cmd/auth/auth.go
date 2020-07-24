@@ -13,10 +13,11 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/hectorgabucio/donotdevelopmyapp/pkg/auth"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/grpc"
@@ -41,28 +42,22 @@ const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_
 
 const EXPIRES = 24 * time.Hour
 
-// grpcHandlerFunc returns an http.Handler that delegates to grpcServer on incoming gRPC
-// connections or otherHandler otherwise. Copied from cockroachdb.
-func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO(tamird): point to merged gRPC code rather than a PR.
-		// This is a partial recreation of gRPC's internal checks https://github.com/grpc/grpc-go/pull/514/files#diff-95e9a25b738459a2d3030e1e6fa2a718R61
-		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
-			grpcServer.ServeHTTP(w, r)
-		} else {
-			otherHandler.ServeHTTP(w, r)
-		}
-	})
+type myAuthServiceServer struct {
+}
+
+func (s *myAuthServiceServer) GetUser(ctx context.Context, token *auth.Token) (*auth.User, error) {
+	userId, err := DecodeToken(token.Value)
+	return &auth.User{Id: userId}, err
 }
 
 func main() {
-	//http.HandleFunc("/login", handleGoogleLogin)
-	//http.HandleFunc("/callback", oauthGoogleCallback)
-	//fmt.Println(http.ListenAndServe(":8080", nil))
 
-	conn, err := net.Listen("tcp", fmt.Sprintf(":%d", 8080))
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 8081))
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to listen: %v", err)
 	}
 
 	mux := http.NewServeMux()
@@ -71,14 +66,22 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
-	srv := &http.Server{
-		Addr:    "localhost:8080",
-		Handler: grpcHandlerFunc(grpcServer, mux),
-	}
+	authServer := &myAuthServiceServer{}
 
-	if err := srv.Serve(conn); err != nil {
-		panic(err)
-	}
+	auth.RegisterAuthServiceServer(grpcServer, authServer)
+
+	go func() {
+		log.Fatal(grpcServer.Serve(lis))
+		wg.Done()
+	}()
+
+	go func() {
+		log.Fatal(http.ListenAndServe(":8080", mux))
+		wg.Done()
+	}()
+
+	log.Println("Serving http and grpc...")
+	wg.Wait()
 
 }
 
@@ -158,10 +161,10 @@ func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := http.Cookie{Name: COOKIE_JWT_NAME, Value: token, Expires: time.Now().Add(EXPIRES), HttpOnly: true, SameSite: http.SameSiteLaxMode}
+	cookie := http.Cookie{Name: COOKIE_JWT_NAME, Value: token, Expires: time.Now().Add(EXPIRES), HttpOnly: true, SameSite: http.SameSiteLaxMode, Path: "/"}
 	http.SetCookie(w, &cookie)
 
-	fmt.Fprint(w, token)
+	fmt.Fprint(w, "Logged in")
 
 }
 
@@ -177,6 +180,30 @@ func CreateToken(userid string) (string, error) {
 		return "", err
 	}
 	return token, nil
+}
+
+func DecodeToken(token string) (string, error) {
+	claims := jwt.MapClaims{}
+	jwt, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("ACCESS_SECRET")), nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if !jwt.Valid {
+		return "", fmt.Errorf("Token not valid")
+	}
+
+	for key, val := range claims {
+		if key == "user_id" {
+			return val.(string), nil
+		}
+
+	}
+
+	return "", fmt.Errorf("Could not find user id claim in decoded token")
+
 }
 
 func getUserDataFromGoogle(code string) ([]byte, error) {

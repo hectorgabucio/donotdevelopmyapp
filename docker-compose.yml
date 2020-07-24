@@ -37,6 +37,8 @@ services:
       - RANDOM_MICRO_SERVICE_PORT=8080
       - CHARACTER_MICRO_SERVICE_HOST=character-micro
       - CHARACTER_MICRO_SERVICE_PORT=8080
+      - AUTH_MICRO_SERVICE_HOST=auth-micro
+      - AUTH_MICRO_SERVICE_PORT=8081
     ports:
       - 8081:8080
     depends_on:

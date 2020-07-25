@@ -1,4 +1,9 @@
 module.exports = {
+    settings: {
+      react: {
+        version: "detect", // React version. "detect" automatically picks the version you have installed.
+      },
+    },
     root: true,
     env: {
       browser: true,

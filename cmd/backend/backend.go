@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,6 +21,12 @@ type app struct {
 	randomClient    random.RandomServiceClient
 	characterClient character.CharacterServiceClient
 	authClient      auth.AuthServiceClient
+}
+
+type characterJson struct {
+	Id    string `json:"id"`
+	Name  string `json:"name"`
+	Image string `json:"image"`
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -71,7 +78,20 @@ func (rh *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Error while getting random character %s", err)
 	}
 
-	fmt.Fprint(w, character.String())
+	if character.Name == "" {
+		w.WriteHeader(404)
+		return
+	}
+
+	mappedResponse := &characterJson{Id: strconv.FormatInt(int64(character.Id), 10), Name: character.Name, Image: character.Image}
+
+	encoded, err := json.Marshal(mappedResponse)
+	if err != nil {
+		log.Fatalf("Error encoding to json character %s", err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, string(encoded))
 }
 
 func main() {

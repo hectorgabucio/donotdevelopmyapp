@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+import axios from 'axios';
 
 export default function App() {
   return (
@@ -38,6 +39,15 @@ export default function App() {
 }
 
 function Home() {
+  axios.get('/random').then(
+    (onfullfilled) => {
+      console.log(onfullfilled);
+    },
+    (rejected) => {
+      console.log(rejected);
+    }
+  );
+
   return <h2>Home</h2>;
 }
 

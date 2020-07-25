@@ -164,7 +164,7 @@ func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	cookie := http.Cookie{Name: COOKIE_JWT_NAME, Value: token, Expires: time.Now().Add(EXPIRES), HttpOnly: true, SameSite: http.SameSiteLaxMode, Path: "/"}
 	http.SetCookie(w, &cookie)
 
-	fmt.Fprint(w, "Logged in")
+	http.Redirect(w, r, os.Getenv("FRONT_URL"), 302)
 
 }
 

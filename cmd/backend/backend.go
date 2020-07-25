@@ -22,6 +22,15 @@ type app struct {
 	authClient      auth.AuthServiceClient
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", os.Getenv("FRONT_URL"))
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func logMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received new request: %s", r.URL.RequestURI())
@@ -92,6 +101,6 @@ func main() {
 	handler := http.HandlerFunc(app.ServeHTTP)
 
 	mux := http.NewServeMux()
-	mux.Handle("/random", app.securedMiddleware(logMiddleware(handler)))
+	mux.Handle("/random", corsMiddleware(app.securedMiddleware((logMiddleware(handler)))))
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

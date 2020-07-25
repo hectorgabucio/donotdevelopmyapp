@@ -3,6 +3,33 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import axios from 'axios';
+import swal from 'sweetalert';
+
+axios.defaults.baseURL = 'http://localhost:8081';
+axios.defaults.withCredentials = true;
+
+// Add a 401 response interceptor
+axios.interceptors.response.use(
+  function (response) {
+    return response;
+  },
+  function (error) {
+    if (401 === error.response.status) {
+      swal({
+        title: 'Session Expired',
+        text:
+          'Your session has expired. You are going to be redirected to the login page',
+        icon: 'warning',
+        button: 'OK',
+      })
+        .then((value) => (window.location = '/auth'))
+        .catch((error) => console.log(error));
+    } else {
+      return Promise.reject(error);
+    }
+  }
+);
 
 ReactDOM.render(
   <React.StrictMode>

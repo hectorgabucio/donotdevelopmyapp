@@ -9,6 +9,7 @@ import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardMedia from '@material-ui/core/CardMedia';
 import Typography from '@material-ui/core/Typography';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const useStyles = makeStyles({
   root: {
@@ -22,13 +23,22 @@ const useStyles = makeStyles({
 export const Dashboard = () => {
   const classes = useStyles();
   const [character, setCharacter] = useState(null);
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     async function getCharacter() {
-      const character = await getRandomCharacter();
-      setCharacter(character);
+      try {
+        const character = await getRandomCharacter();
+        setCharacter(character);
+      } finally {
+        setLoaded(true);
+      }
     }
     getCharacter();
   }, []);
+
+  if (!loaded) {
+    return <CircularProgress color="secondary" />;
+  }
 
   if (!character) {
     return (

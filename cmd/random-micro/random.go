@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
 	"log"
 	"math/big"
-	"net"
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"google.golang.org/grpc"
 )
 
@@ -23,19 +22,10 @@ func (c randomHandler) GetRandom(ctx context.Context, input *random.RandomInput)
 }
 
 func main() {
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 8080))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
 	s := randomHandler{}
-
 	grpcServer := grpc.NewServer()
-
 	random.RegisterRandomServiceServer(grpcServer, &s)
-
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %s", err)
+	if err := server.ServeGRPC(grpcServer); err != nil {
+		log.Fatalf("Failed to serve: %s", err)
 	}
 }

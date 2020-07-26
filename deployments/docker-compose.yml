@@ -4,13 +4,13 @@ services:
   website:
     build:
       context: ./website
+      args:
+        REACT_APP_BACKEND_URL: http://localhost:8080
     ports:
       - 80:80
     environment:
       - AUTH_URL=http://auth-micro:8080/login
       - CALLBACK_URL=http://auth-micro:8080/callback
-
-
 
   auth-micro:
     build:
@@ -35,14 +35,14 @@ services:
         project: ./cmd/backend/
     environment:
       - RANDOM_MICRO_SERVICE_HOST=random-micro
-      - RANDOM_MICRO_SERVICE_PORT=8080
+      - RANDOM_MICRO_SERVICE_PORT=8081
       - CHARACTER_MICRO_SERVICE_HOST=character-micro
-      - CHARACTER_MICRO_SERVICE_PORT=8080
+      - CHARACTER_MICRO_SERVICE_PORT=8081
       - AUTH_MICRO_SERVICE_HOST=auth-micro
       - AUTH_MICRO_SERVICE_PORT=8081
       - FRONT_URL=http://localhost
     ports:
-      - 8081:8080
+      - 8080:8080
     depends_on:
       - random-micro
 

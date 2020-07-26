@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/grpc"
@@ -55,11 +55,6 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 8081))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/login", handleGoogleLogin)
 	mux.HandleFunc("/callback", oauthGoogleCallback)
@@ -71,7 +66,7 @@ func main() {
 	auth.RegisterAuthServiceServer(grpcServer, authServer)
 
 	go func() {
-		log.Fatal(grpcServer.Serve(lis))
+		log.Fatal(server.ServeGRPC(grpcServer))
 		wg.Done()
 	}()
 

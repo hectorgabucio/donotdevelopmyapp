@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"time"
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"github.com/patrickmn/go-cache"
 	"google.golang.org/grpc"
 )
@@ -66,17 +66,9 @@ func main() {
 
 	app := &App{ApiClient: apiClient, Cache: c}
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 8080))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
 	grpcServer := grpc.NewServer()
-
 	character.RegisterCharacterServiceServer(grpcServer, app)
-
-	if err := grpcServer.Serve(lis); err != nil {
+	if err := server.ServeGRPC(grpcServer); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}
-
 }

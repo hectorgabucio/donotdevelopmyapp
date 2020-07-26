@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hectorgabucio/donotdevelopmyapp/pkg/character"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
 	"github.com/patrickmn/go-cache"
 	"google.golang.org/grpc"
 )

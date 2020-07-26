@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"net"
 
-	"github.com/hectorgabucio/donotdevelopmyapp/pkg/random"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
 	"google.golang.org/grpc"
 )
 

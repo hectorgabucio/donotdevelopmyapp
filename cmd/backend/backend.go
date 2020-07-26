@@ -9,9 +9,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/hectorgabucio/donotdevelopmyapp/pkg/auth"
-	"github.com/hectorgabucio/donotdevelopmyapp/pkg/character"
-	"github.com/hectorgabucio/donotdevelopmyapp/pkg/random"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
 	"google.golang.org/grpc"
 )
 

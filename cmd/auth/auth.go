@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/hectorgabucio/donotdevelopmyapp/pkg/auth"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/grpc"

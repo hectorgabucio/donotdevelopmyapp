@@ -12,6 +12,7 @@ import (
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"google.golang.org/grpc"
 )
 
@@ -122,5 +123,5 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/random", corsMiddleware(app.securedMiddleware((logMiddleware(handler)))))
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Fatal(server.ServeHTTP(mux))
 }

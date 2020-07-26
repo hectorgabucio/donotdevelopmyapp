@@ -71,13 +71,11 @@ func main() {
 	}()
 
 	go func() {
-		log.Fatal(http.ListenAndServe(":8080", mux))
+		log.Fatal(server.ServeHTTP(mux))
 		wg.Done()
 	}()
 
-	log.Println("Serving http and grpc...")
 	wg.Wait()
-
 }
 
 func generateStateOauthCookie(w http.ResponseWriter) string {

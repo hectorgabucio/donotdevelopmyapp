@@ -15,7 +15,7 @@ services:
   auth-micro:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./build/Dockerfile
       args:
         project: ./cmd/auth/
     env_file:
@@ -30,7 +30,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./build/Dockerfile
       args:
         project: ./cmd/backend/
     environment:
@@ -49,14 +49,14 @@ services:
   character-micro:
       build:
         context: .
-        dockerfile: ./Dockerfile
+        dockerfile: ./build/Dockerfile
         args:
           project: ./cmd/characters/
 
   random-micro:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./build/Dockerfile
       args:
         project: ./cmd/random-micro/
 

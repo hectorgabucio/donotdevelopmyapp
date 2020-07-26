@@ -11,7 +11,7 @@ check-style: golangci-lint
 ## Runs a local environment using docker-compose
 .PHONY: start
 start: check-style
-	docker-compose up --build
+	docker-compose -f deployments/docker-compose.yml --project-directory . up --build
 
 ## Run golangci-lint on codebase.
 .PHONY: golangci-lint

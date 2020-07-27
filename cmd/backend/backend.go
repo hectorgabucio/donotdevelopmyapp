@@ -13,7 +13,6 @@ import (
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
-	"google.golang.org/grpc"
 )
 
 const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
@@ -97,21 +96,21 @@ func (rh *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	connRandom, err := grpc.Dial(os.Getenv("RANDOM_MICRO_SERVICE_HOST")+":"+os.Getenv("RANDOM_MICRO_SERVICE_PORT"), grpc.WithInsecure())
+	connRandom, err := server.EstablishGRPCConn(os.Getenv("RANDOM_MICRO_SERVICE_HOST") + ":" + os.Getenv("RANDOM_MICRO_SERVICE_PORT"))
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}
 	defer connRandom.Close()
 	randomClient := random.NewRandomServiceClient(connRandom)
 
-	connCharacter, err := grpc.Dial(os.Getenv("CHARACTER_MICRO_SERVICE_HOST")+":"+os.Getenv("CHARACTER_MICRO_SERVICE_PORT"), grpc.WithInsecure())
+	connCharacter, err := server.EstablishGRPCConn(os.Getenv("CHARACTER_MICRO_SERVICE_HOST") + ":" + os.Getenv("CHARACTER_MICRO_SERVICE_PORT"))
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}
 	defer connCharacter.Close()
 	characterClient := character.NewCharacterServiceClient(connCharacter)
 
-	connAuth, err := grpc.Dial(os.Getenv("AUTH_MICRO_SERVICE_HOST")+":"+os.Getenv("AUTH_MICRO_SERVICE_PORT"), grpc.WithInsecure())
+	connAuth, err := server.EstablishGRPCConn(os.Getenv("AUTH_MICRO_SERVICE_HOST") + ":" + os.Getenv("AUTH_MICRO_SERVICE_PORT"))
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}

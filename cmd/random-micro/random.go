@@ -8,7 +8,6 @@ import (
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
-	"google.golang.org/grpc"
 )
 
 type randomHandler struct{}
@@ -23,7 +22,7 @@ func (c randomHandler) GetRandom(ctx context.Context, input *random.RandomInput)
 
 func main() {
 	s := randomHandler{}
-	grpcServer := grpc.NewServer()
+	grpcServer := server.NewGRPC()
 	random.RegisterRandomServiceServer(grpcServer, &s)
 	if err := server.ServeGRPC(grpcServer); err != nil {
 		log.Fatalf("Failed to serve: %s", err)

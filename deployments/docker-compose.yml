@@ -3,7 +3,7 @@ services:
 
   website:
     build:
-      context: ./website
+      context: ../website
       args:
         REACT_APP_BACKEND_URL: http://localhost:8080
     ports:
@@ -14,22 +14,24 @@ services:
 
   auth-micro:
     build:
-      context: .
+      context: ../
       dockerfile: ./build/Dockerfile
       args:
         project: ./cmd/auth/
     env_file:
-      ./auth.env
+      ../auth.env
     environment:
       - REDIRECT_URL=http://localhost/callback
       - FRONT_URL=http://localhost
       - ACCESS_SECRET=thisisnotproductionlulz
       - STATE_SECRET=thisisnotproductionlulz111111111
+    volumes:
+      - ../tls:/tls:ro
 
 
   backend:
     build:
-      context: .
+      context: ../
       dockerfile: ./build/Dockerfile
       args:
         project: ./cmd/backend/
@@ -41,24 +43,30 @@ services:
       - AUTH_MICRO_SERVICE_HOST=auth-micro
       - AUTH_MICRO_SERVICE_PORT=8081
       - FRONT_URL=http://localhost
+    volumes:
+      - ../tls:/tls:ro
     ports:
       - 8080:8080
     depends_on:
       - random-micro
 
   character-micro:
-      build:
-        context: .
-        dockerfile: ./build/Dockerfile
-        args:
-          project: ./cmd/characters/
+    build:
+      context: ../
+      dockerfile: ./build/Dockerfile
+      args:
+        project: ./cmd/characters/
+    volumes:
+      - ../tls:/tls:ro
 
   random-micro:
     build:
-      context: .
+      context: ../
       dockerfile: ./build/Dockerfile
       args:
         project: ./cmd/random-micro/
+    volumes:
+      - ../tls:/tls:ro
 
   
   #db1:

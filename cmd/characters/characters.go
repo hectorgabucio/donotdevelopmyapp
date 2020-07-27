@@ -11,7 +11,6 @@ import (
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"github.com/patrickmn/go-cache"
-	"google.golang.org/grpc"
 )
 
 type App struct {
@@ -66,7 +65,7 @@ func main() {
 
 	app := &App{ApiClient: apiClient, Cache: c}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := server.NewGRPC()
 	character.RegisterCharacterServiceServer(grpcServer, app)
 	if err := server.ServeGRPC(grpcServer); err != nil {
 		log.Fatalf("failed to serve: %s", err)

@@ -20,7 +20,6 @@ import (
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/grpc"
 )
 
 type UserInfo struct {
@@ -59,7 +58,7 @@ func main() {
 	mux.HandleFunc("/login", handleGoogleLogin)
 	mux.HandleFunc("/callback", oauthGoogleCallback)
 
-	grpcServer := grpc.NewServer()
+	grpcServer := server.NewGRPC()
 
 	authServer := &myAuthServiceServer{}
 

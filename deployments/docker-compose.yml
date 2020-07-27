@@ -7,10 +7,12 @@ services:
       args:
         REACT_APP_BACKEND_URL: http://localhost:8080
     ports:
-      - 80:80
+      - 443:443
     environment:
       - AUTH_URL=http://auth-micro:8080/login
       - CALLBACK_URL=http://auth-micro:8080/callback
+    volumes:
+      - ../tls:/tls:ro
 
   auth-micro:
     build:
@@ -21,8 +23,8 @@ services:
     env_file:
       ../auth.env
     environment:
-      - REDIRECT_URL=http://localhost/callback
-      - FRONT_URL=http://localhost
+      - REDIRECT_URL=https://localhost/callback
+      - FRONT_URL=https://localhost
       - ACCESS_SECRET=thisisnotproductionlulz
       - STATE_SECRET=thisisnotproductionlulz111111111
     volumes:
@@ -42,7 +44,7 @@ services:
       - CHARACTER_MICRO_SERVICE_PORT=8081
       - AUTH_MICRO_SERVICE_HOST=auth-micro
       - AUTH_MICRO_SERVICE_PORT=8081
-      - FRONT_URL=http://localhost
+      - FRONT_URL=https://localhost
     volumes:
       - ../tls:/tls:ro
     ports:

@@ -21,7 +21,11 @@ jobs:
     steps:
       - checkout
 
-      # specify any bash command here prefixed with `run: `
+      - run:
+        name: "Create a temp directory for artifacts"
+        command: |
+          mkdir -p /tmp/artifacts
       - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
       - run: cd website && npm ci && cd ..
-      - run: make
+      - run: make cov
+      - run: mv coverage.html /tmp/artifacts

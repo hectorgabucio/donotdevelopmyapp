@@ -7,3 +7,4 @@ tls/service.csr
 tls/service.key
 tls/service.key
 tls/service.pem
+coverage.html

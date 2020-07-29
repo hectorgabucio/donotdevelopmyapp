@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/cipher"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -87,7 +86,7 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	}
 	state := base64.URLEncoding.EncodeToString(b)
 
-	encrypted, err := Encrypt([]byte(os.Getenv("STATE_SECRET")), b)
+	encrypted, err := cipher.Encrypt([]byte(os.Getenv("STATE_SECRET")), b)
 	if err != nil {
 		log.Fatalf("Error encrypting state: %s\n", err)
 	}
@@ -120,7 +119,7 @@ func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decryptedState, err := Decrypt([]byte(os.Getenv("STATE_SECRET")), oauthStateEncrypted)
+	decryptedState, err := cipher.Decrypt([]byte(os.Getenv("STATE_SECRET")), oauthStateEncrypted)
 	if err != nil {
 		log.Printf("cant decrypt state cookie, %s\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -215,42 +214,4 @@ func getUserDataFromGoogle(code string) ([]byte, error) {
 		return nil, fmt.Errorf("failed read response: %s", err.Error())
 	}
 	return contents, nil
-}
-
-func Encrypt(key, data []byte) ([]byte, error) {
-	blockCipher, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-
-	gcm, err := cipher.NewGCM(blockCipher)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err = rand.Read(nonce); err != nil {
-		return nil, err
-	}
-
-	ciphertext := gcm.Seal(nonce, nonce, data, nil)
-
-	return ciphertext, nil
-}
-
-func Decrypt(key, data []byte) ([]byte, error) {
-	blockCipher, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(blockCipher)
-	if err != nil {
-		return nil, err
-	}
-	nonce, ciphertext := data[:gcm.NonceSize()], data[gcm.NonceSize():]
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		return nil, err
-	}
-	return plaintext, nil
 }

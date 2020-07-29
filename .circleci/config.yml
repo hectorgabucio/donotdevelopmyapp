@@ -28,3 +28,5 @@ jobs:
       - run: cd website && npm ci && cd ..
       - run: make cov
       - run: mv coverage.html /tmp/artifacts
+      - store_artifacts:
+          path: /tmp/artifacts

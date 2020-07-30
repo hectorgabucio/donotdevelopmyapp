@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
 	"log"
 	"math/big"
 
@@ -13,9 +14,12 @@ import (
 type randomHandler struct{}
 
 func (c randomHandler) GetRandom(ctx context.Context, input *random.RandomInput) (*random.RandomNumber, error) {
+	if input.Max <= 0 {
+		return nil, fmt.Errorf("Max input cant be 0 or lesser than 0")
+	}
 	n, err := rand.Int(rand.Reader, big.NewInt(input.Max))
 	if err != nil {
-		log.Fatalf("Error while calculating secure random number: %s", err)
+		return nil, err
 	}
 	return &random.RandomNumber{Number: n.Uint64()}, nil
 }

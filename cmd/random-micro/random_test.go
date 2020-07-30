@@ -7,6 +7,7 @@ import (
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
 	"github.com/hectorgabucio/donotdevelopmyapp/test/grpctest"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRandomNumber(t *testing.T) {
@@ -26,14 +27,16 @@ func TestGetRandomNumber(t *testing.T) {
 	conn := grpctest.Dialer()
 	defer conn.Close()
 
+	assert := assert.New(t)
+
 	for _, tt := range tests {
 		testname := fmt.Sprintf("%d,%s", tt.maxInput, tt.errorMessage)
 		t.Run(testname, func(t *testing.T) {
 			ctx := context.Background()
 			client := random.NewRandomServiceClient(conn)
 			_, err := client.GetRandom(ctx, &random.RandomInput{Max: tt.maxInput})
-			if err != nil && tt.errorMessage != err.Error() {
-				t.Fatalf("TestGetRandomNumber failed: %v", err)
+			if err != nil {
+				assert.Equal(tt.errorMessage, err.Error(), "It should be equal")
 			}
 
 		})

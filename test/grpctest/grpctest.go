@@ -13,11 +13,12 @@ var lis *bufconn.Listener
 
 const bufSize = 1024 * 1024
 
-func InitServer() *grpc.Server {
+func InitServer(init chan bool) *grpc.Server {
 	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
 
 	go func() {
+		<-init
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
 		}

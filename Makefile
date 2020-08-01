@@ -56,7 +56,7 @@ cov: check-style
 ## Autogenerates mocks
 .PHONY: mocks
 mocks: 
-	mockery -all -output ./test/mocks
+	mockery -name ApiController -dir cmd -recursive -output ./test/mocks
 
 # Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

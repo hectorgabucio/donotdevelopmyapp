@@ -28,8 +28,8 @@ func TestGetCharacter(t *testing.T) {
 		{"11", "rpc error: code = Unknown desc = invalid character 'm' looking for beginning of value", nil},
 		{"12", "", &character.Output{Id: 1, Name: "Ricky", Image: "image"}},
 	}
-
-	s := grpctest.InitServer()
+	init := make(chan bool)
+	s := grpctest.InitServer(init)
 	defer s.GracefulStop()
 
 	c := cache.New(cache.NoExpiration, 10*time.Minute)
@@ -46,6 +46,7 @@ func TestGetCharacter(t *testing.T) {
 	app := &App{Api: &apiClient, Cache: c}
 
 	character.RegisterCharacterServiceServer(s, app)
+	init <- true
 
 	conn := grpctest.Dialer()
 	defer conn.Close()

@@ -19,10 +19,11 @@ func TestGetRandomNumber(t *testing.T) {
 		{10, ""},
 		{-1, "rpc error: code = Unknown desc = Max input cant be 0 or lesser than 0"},
 	}
-
-	s := grpctest.InitServer()
+	init := make(chan bool)
+	s := grpctest.InitServer(init)
 	defer s.GracefulStop()
 	random.RegisterRandomServiceServer(s, &randomHandler{})
+	init <- true
 
 	conn := grpctest.Dialer()
 	defer conn.Close()

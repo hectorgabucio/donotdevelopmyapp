@@ -66,5 +66,40 @@ func TestGetCharacter(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestGetCharacterCached(t *testing.T) {
+	init := make(chan bool)
+	s := grpctest.InitServer(init)
+	defer s.GracefulStop()
+
+	c := cache.New(cache.NoExpiration, 10*time.Minute)
+
+	apiClient := mocks.ApiController{}
+
+	apiClient.On("GetBaseUrl").Return("/api/")
+	apiClient.On("Get", "/api/1").Return(&http.Response{
+		Body: ioutil.NopCloser(strings.NewReader(`{"id": 1, "name": "Ricky", "image": "image"}`))}, nil)
+
+	app := &App{Api: &apiClient, Cache: c}
+
+	character.RegisterCharacterServiceServer(s, app)
+	init <- true
+
+	conn := grpctest.Dialer()
+	defer conn.Close()
+
+	assert := assert.New(t)
+
+	ctx := context.Background()
+	client := character.NewCharacterServiceClient(conn)
+	resp, _ := client.GetCharacter(ctx, &character.Input{Number: "1"})
+
+	assert.Equal(int32(1), resp.Id, "should be equal")
+	apiClient.AssertNumberOfCalls(t, "Get", 1)
+
+	// this time is cached, should not do http call
+	resp, _ = client.GetCharacter(ctx, &character.Input{Number: "1"})
+	assert.Equal(int32(1), resp.Id, "should be equal")
+	apiClient.AssertNumberOfCalls(t, "Get", 1)
 }

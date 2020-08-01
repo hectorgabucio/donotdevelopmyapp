@@ -2,6 +2,8 @@
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
+orbs:
+  codecov: codecov/codecov@1.0.2
 jobs:
   build:
     docker:
@@ -27,6 +29,8 @@ jobs:
       - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
       - run: cd website && npm ci && cd ..
       - run: make cov
-      - run: mv coverage.html /tmp/artifacts
+      - run: cp coverage.txt /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
+      - codecov/upload:
+          file: coverage.txt

@@ -42,15 +42,16 @@ golangci-lint:
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
 test: mocks
-	go test -v ./...
+	go test -race -v ./...
 	cd $(WEBSITE) && npm test -- --watchAll=false;
 
 ## Runs tests and generates coverage files
 .PHONY: cov
 cov: check-style
-	go test -cover -coverprofile=c.out -v ./...
-	go tool cover -html=c.out -o coverage.html
-	rm -rf c.out
+	#go test -race -cover -coverprofile=c.out -v ./...
+	go test -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+	#go tool cover -html=c.out -o coverage.html
+	#rm -rf c.out
 
 
 ## Autogenerates mocks

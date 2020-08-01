@@ -8,3 +8,4 @@ tls/service.key
 tls/service.key
 tls/service.pem
 coverage.html
+coverage.txt

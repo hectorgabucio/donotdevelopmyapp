@@ -14,13 +14,26 @@ import (
 )
 
 type App struct {
-	ApiClient ApiClient
-	Cache     *cache.Cache
+	Api   ApiController
+	Cache *cache.Cache
+}
+
+type ApiController interface {
+	GetBaseUrl() string
+	Get(path string) (*http.Response, error)
 }
 
 type ApiClient struct {
 	baseURL string
-	Client  http.Client
+	client  http.Client
+}
+
+func (api *ApiClient) GetBaseUrl() string {
+	return api.baseURL
+}
+
+func (api *ApiClient) Get(path string) (*http.Response, error) {
+	return api.client.Get(path)
 }
 
 func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*character.Output, error) {
@@ -31,8 +44,8 @@ func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*charac
 		return x.(*character.Output), nil
 	}
 
-	path := fmt.Sprintf("%s%s", a.ApiClient.baseURL, input.Number)
-	resp, err := a.ApiClient.Client.Get(path)
+	path := fmt.Sprintf("%s%s", a.Api.GetBaseUrl(), input.Number)
+	resp, err := a.Api.Get(path)
 	if err != nil {
 		log.Printf("Error while getting characters: %s", err)
 		return nil, err
@@ -57,13 +70,13 @@ func main() {
 
 	apiClient := ApiClient{
 		baseURL: "https://rickandmortyapi.com/api/character/",
-		Client: http.Client{
+		client: http.Client{
 			Timeout: time.Second * 10,
 		},
 	}
 	c := cache.New(cache.NoExpiration, 10*time.Minute)
 
-	app := &App{ApiClient: apiClient, Cache: c}
+	app := &App{Api: &apiClient, Cache: c}
 
 	grpcServer := server.NewGRPC()
 	character.RegisterCharacterServiceServer(grpcServer, app)

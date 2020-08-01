@@ -41,7 +41,7 @@ golangci-lint:
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test:
+test: mocks
 	go test -v ./...
 	cd $(WEBSITE) && npm test -- --watchAll=false;
 
@@ -52,6 +52,11 @@ cov: check-style
 	go tool cover -html=c.out -o coverage.html
 	rm -rf c.out
 
+
+## Autogenerates mocks
+.PHONY: mocks
+mocks: 
+	mockery -all -output ./test/mocks
 
 # Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

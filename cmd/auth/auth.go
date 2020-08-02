@@ -19,6 +19,9 @@ import (
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 type UserInfo struct {
@@ -40,26 +43,40 @@ const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_
 
 const EXPIRES = 24 * time.Hour
 
-type myAuthServiceServer struct {
+type User struct {
+	ID   string `gorm:"primary_key"`
+	Name string
 }
 
-func (s *myAuthServiceServer) GetUser(ctx context.Context, token *auth.Token) (*auth.User, error) {
-	userId, err := DecodeToken(token.Value)
-	return &auth.User{Id: userId}, err
+type myAuthServiceServer struct {
+	db *gorm.DB
+}
+
+func initDBConn() *gorm.DB {
+	addr := fmt.Sprintf("postgresql://root@%s:%s/postgres?sslmode=disable", os.Getenv("DB_SERVICE_HOST"), os.Getenv("DB_SERVICE_PORT"))
+	db, err := gorm.Open("postgres", addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db.LogMode(true)
+	db.AutoMigrate(&User{})
+	return db
 }
 
 func main() {
+	db := initDBConn()
+	defer db.Close()
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
+	authServer := &myAuthServiceServer{db: db}
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/login", handleGoogleLogin)
-	mux.HandleFunc("/callback", oauthGoogleCallback)
+	mux.HandleFunc("/login", authServer.handleGoogleLogin)
+	mux.HandleFunc("/callback", authServer.oauthGoogleCallback)
 
 	grpcServer := server.NewGRPC()
-
-	authServer := &myAuthServiceServer{}
 
 	auth.RegisterAuthServiceServer(grpcServer, authServer)
 
@@ -76,7 +93,12 @@ func main() {
 	wg.Wait()
 }
 
-func generateStateOauthCookie(w http.ResponseWriter) string {
+func (s *myAuthServiceServer) GetUser(ctx context.Context, token *auth.Token) (*auth.User, error) {
+	userId, err := DecodeToken(token.Value)
+	return &auth.User{Id: userId}, err
+}
+
+func (s *myAuthServiceServer) generateStateOauthCookie(w http.ResponseWriter) string {
 	var expiration = time.Now().Add(EXPIRES)
 
 	b := make([]byte, 16)
@@ -97,13 +119,13 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	return state
 }
 
-func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
-	oauthState := generateStateOauthCookie(w)
+func (s *myAuthServiceServer) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
+	oauthState := s.generateStateOauthCookie(w)
 	url := googleOauthConfig.AuthCodeURL(oauthState)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
+func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	oauthState, err := r.Cookie(COOKIE_STATE_NAME)
 
 	if err != nil {
@@ -143,6 +165,12 @@ func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(data, &user)
 	if err != nil {
 		fmt.Fprintf(w, "error decoding json: %s\n", err)
+		return
+	}
+
+	var userDB User
+	if err := s.db.FirstOrCreate(&userDB, &User{ID: user.ID, Name: "TOBEGENERATED"}).Error; err != nil {
+		fmt.Fprintf(w, "error saving user id: %s\n", err)
 		return
 	}
 

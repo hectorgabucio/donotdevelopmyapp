@@ -1,16 +1,47 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/test/mocks"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestBackendNoCookie(t *testing.T) {
+	app := &app{randomClient: &mocks.RandomServiceClient{}, characterClient: &mocks.CharacterServiceClient{},
+		authClient: &mocks.AuthServiceClient{}}
+	testHandler, rr, req := prepareSUT(t, app)
+	testHandler.ServeHTTP(rr, req)
 
-	app := &app{randomClient: &mocks.RandomServiceClient{}, characterClient: &mocks.CharacterServiceClient{}, authClient: &mocks.AuthServiceClient{}}
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+}
+
+func TestBackendErrorAuthCookie(t *testing.T) {
+
+	authMockClient := &mocks.AuthServiceClient{}
+	authMockClient.On("GetUser", mock.Anything, &auth.Token{Value: "jwt"}).Return(nil, fmt.Errorf("error"))
+	app := &app{randomClient: &mocks.RandomServiceClient{}, characterClient: &mocks.CharacterServiceClient{},
+		authClient: authMockClient}
+
+	testHandler, rr, req := prepareSUT(t, app)
+	testHandler.ServeHTTP(rr, req)
+	req.AddCookie(&http.Cookie{Name: COOKIE_JWT_NAME, Value: "jwt"})
+	testHandler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+}
+
+func prepareSUT(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorder, *http.Request) {
 	handler := http.HandlerFunc(app.ServeHTTP)
 	testHandler := corsMiddleware(app.securedMiddleware((logMiddleware(handler))))
 
@@ -21,12 +52,8 @@ func TestBackendNoCookie(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testHandler.ServeHTTP(rr, req)
+	return testHandler, rr, req
 
-	if status := rr.Code; status != http.StatusUnauthorized {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
 }
 
 /*

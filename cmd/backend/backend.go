@@ -69,16 +69,21 @@ func (app *app) securedMiddleware(next http.Handler) http.Handler {
 func (rh *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	message, err := rh.randomClient.GetRandom(context.Background(), &random.RandomInput{Max: 1000})
 	if err != nil {
-		log.Fatalf("error while saying hello to random micro %s", err)
+		log.Printf("error while saying hello to random micro %s", err)
+		w.WriteHeader(500)
+		return
 	}
 
 	numberStr := strconv.FormatUint(message.Number, 10)
 	character, err := rh.characterClient.GetCharacter(context.Background(), &character.Input{Number: numberStr})
 	if err != nil {
-		log.Fatalf("Error while getting random character %s", err)
+		log.Printf("Error while getting random character %s", err)
+		w.WriteHeader(500)
+		return
 	}
 
 	if character.Name == "" {
+		log.Printf("No character found")
 		w.WriteHeader(404)
 		return
 	}

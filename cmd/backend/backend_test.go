@@ -7,9 +7,14 @@ import (
 	"testing"
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
 	"github.com/hectorgabucio/donotdevelopmyapp/test/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+const AUTHCOOKIE_VALUE = "jwt"
 
 func TestBackendNoCookie(t *testing.T) {
 	app := &app{randomClient: &mocks.RandomServiceClient{}, characterClient: &mocks.CharacterServiceClient{},
@@ -24,21 +29,45 @@ func TestBackendNoCookie(t *testing.T) {
 }
 
 func TestBackendErrorAuthCookie(t *testing.T) {
-
-	authMockClient := &mocks.AuthServiceClient{}
-	authMockClient.On("GetUser", mock.Anything, &auth.Token{Value: "jwt"}).Return(nil, fmt.Errorf("error"))
 	app := &app{randomClient: &mocks.RandomServiceClient{}, characterClient: &mocks.CharacterServiceClient{},
-		authClient: authMockClient}
+		authClient: errorAuthCookieClient()}
 
 	testHandler, rr, req := prepareSUT(t, app)
-	testHandler.ServeHTTP(rr, req)
-	req.AddCookie(&http.Cookie{Name: COOKIE_JWT_NAME, Value: "jwt"})
+	req.AddCookie(&http.Cookie{Name: COOKIE_JWT_NAME, Value: AUTHCOOKIE_VALUE})
 	testHandler.ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusUnauthorized {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
+}
+
+func TestBackend(t *testing.T) {
+
+	tests := []struct {
+		randomClient    *mocks.RandomServiceClient
+		characterClient *mocks.CharacterServiceClient
+		statusCode      int
+	}{
+		{errorRandomClient(), nil, 500},
+		{validRandomClient(), errorCharacterClient(), 500},
+		{validRandomClient(), noCharacterClient(), 404},
+		{validRandomClient(), validCharacterClient(), 200},
+	}
+
+	assert := assert.New(t)
+	for _, tt := range tests {
+
+		app := &app{randomClient: tt.randomClient, characterClient: tt.characterClient,
+			authClient: validCookieClient()}
+		testHandler, rr, req := prepareSUT(t, app)
+		req.AddCookie(&http.Cookie{Name: COOKIE_JWT_NAME, Value: AUTHCOOKIE_VALUE})
+		testHandler.ServeHTTP(rr, req)
+
+		assert.Equal(tt.statusCode, rr.Code, "handler returned wrong status code: got %v want %v",
+			rr.Code, tt.statusCode)
+	}
+
 }
 
 func prepareSUT(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorder, *http.Request) {
@@ -56,40 +85,44 @@ func prepareSUT(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorde
 
 }
 
-/*
+func errorAuthCookieClient() *mocks.AuthServiceClient {
+	authMockClient := &mocks.AuthServiceClient{}
+	authMockClient.On("GetUser", mock.Anything, &auth.Token{Value: AUTHCOOKIE_VALUE}).Return(nil, fmt.Errorf("error"))
+	return authMockClient
+}
 
+func validCookieClient() *mocks.AuthServiceClient {
+	authMockClient := &mocks.AuthServiceClient{}
+	authMockClient.On("GetUser", mock.Anything, &auth.Token{Value: AUTHCOOKIE_VALUE}).Return(&auth.User{}, nil)
+	return authMockClient
+}
 
-func TestGetRandomNumber(t *testing.T) {
+func errorRandomClient() *mocks.RandomServiceClient {
+	randomClient := &mocks.RandomServiceClient{}
+	randomClient.On("GetRandom", mock.Anything, &random.RandomInput{Max: 1000}).Return(nil, fmt.Errorf("error"))
+	return randomClient
+}
 
-	tests := []struct {
-		maxInput     int64
-		errorMessage string
-	}{
-		{10, ""},
-		{-1, "rpc error: code = Unknown desc = Max input cant be 0 or lesser than 0"},
-	}
-	init := make(chan bool)
-	s := grpctest.InitServer(init)
-	defer s.GracefulStop()
-	random.RegisterRandomServiceServer(s, &randomHandler{})
-	init <- true
+func validRandomClient() *mocks.RandomServiceClient {
+	randomClient := &mocks.RandomServiceClient{}
+	randomClient.On("GetRandom", mock.Anything, &random.RandomInput{Max: 1000}).Return(&random.RandomNumber{Number: 10}, nil)
+	return randomClient
+}
 
-	conn := grpctest.Dialer()
-	defer conn.Close()
+func errorCharacterClient() *mocks.CharacterServiceClient {
+	characterClient := &mocks.CharacterServiceClient{}
+	characterClient.On("GetCharacter", mock.Anything, &character.Input{Number: "10"}).Return(nil, fmt.Errorf("error"))
+	return characterClient
+}
 
-	assert := assert.New(t)
+func noCharacterClient() *mocks.CharacterServiceClient {
+	characterClient := &mocks.CharacterServiceClient{}
+	characterClient.On("GetCharacter", mock.Anything, &character.Input{Number: "10"}).Return(&character.Output{}, nil)
+	return characterClient
+}
 
-	for _, tt := range tests {
-		testname := fmt.Sprintf("%d,%s", tt.maxInput, tt.errorMessage)
-		t.Run(testname, func(t *testing.T) {
-			ctx := context.Background()
-			client := random.NewRandomServiceClient(conn)
-			_, err := client.GetRandom(ctx, &random.RandomInput{Max: tt.maxInput})
-			if err != nil {
-				assert.Equal(tt.errorMessage, err.Error(), "It should be equal")
-			}
-
-		})
-	}
-
-*/
+func validCharacterClient() *mocks.CharacterServiceClient {
+	characterClient := &mocks.CharacterServiceClient{}
+	characterClient.On("GetCharacter", mock.Anything, &character.Input{Number: "10"}).Return(&character.Output{Id: 10, Name: "name"}, nil)
+	return characterClient
+}

@@ -16,6 +16,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/cipher"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/config"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -27,14 +28,6 @@ import (
 type UserInfo struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
-}
-
-var googleOauthConfig = &oauth2.Config{
-	RedirectURL:  os.Getenv("REDIRECT_URL"),
-	ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-	ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
-	Endpoint:     google.Endpoint,
 }
 
 const COOKIE_STATE_NAME = "DONOTDEVELOPMYAPPRANDOMSTATE"
@@ -49,10 +42,12 @@ type User struct {
 }
 
 type myAuthServiceServer struct {
-	db *gorm.DB
+	db           *gorm.DB
+	oauth2Config *oauth2.Config
+	config       config.ConfigProvider
 }
 
-func initDBConn() *gorm.DB {
+func (s *myAuthServiceServer) initDBConn() {
 	addr := fmt.Sprintf("postgresql://root@%s:%s/postgres?sslmode=disable", os.Getenv("DB_SERVICE_HOST"), os.Getenv("DB_SERVICE_PORT"))
 	db, err := gorm.Open("postgres", addr)
 	if err != nil {
@@ -60,17 +55,32 @@ func initDBConn() *gorm.DB {
 	}
 	db.LogMode(true)
 	db.AutoMigrate(&User{})
-	return db
+	s.db = db
+}
+
+func (s *myAuthServiceServer) initOAuth2Config() {
+	s.oauth2Config = &oauth2.Config{
+		RedirectURL:  os.Getenv("REDIRECT_URL"),
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+		Endpoint:     google.Endpoint,
+	}
+}
+
+func (s *myAuthServiceServer) init() {
+	s.initDBConn()
+	s.initOAuth2Config()
 }
 
 func main() {
-	db := initDBConn()
-	defer db.Close()
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	authServer := &myAuthServiceServer{db: db}
+	authServer := &myAuthServiceServer{config: config.OsEnv{}}
+	authServer.init()
+	defer authServer.db.Close()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/login", authServer.handleGoogleLogin)
@@ -94,7 +104,7 @@ func main() {
 }
 
 func (s *myAuthServiceServer) GetUser(ctx context.Context, token *auth.Token) (*auth.User, error) {
-	userId, err := DecodeToken(token.Value)
+	userId, err := s.DecodeToken(token.Value)
 	return &auth.User{Id: userId}, err
 }
 
@@ -108,7 +118,7 @@ func (s *myAuthServiceServer) generateStateOauthCookie(w http.ResponseWriter) st
 	}
 	state := base64.URLEncoding.EncodeToString(b)
 
-	encrypted, err := cipher.Encrypt([]byte(os.Getenv("STATE_SECRET")), b)
+	encrypted, err := cipher.Encrypt([]byte(s.config.Get("STATE_SECRET")), b)
 	if err != nil {
 		log.Fatalf("Error encrypting state: %s\n", err)
 	}
@@ -121,7 +131,7 @@ func (s *myAuthServiceServer) generateStateOauthCookie(w http.ResponseWriter) st
 
 func (s *myAuthServiceServer) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	oauthState := s.generateStateOauthCookie(w)
-	url := googleOauthConfig.AuthCodeURL(oauthState)
+	url := s.oauth2Config.AuthCodeURL(oauthState)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -141,7 +151,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 		return
 	}
 
-	decryptedState, err := cipher.Decrypt([]byte(os.Getenv("STATE_SECRET")), oauthStateEncrypted)
+	decryptedState, err := cipher.Decrypt([]byte(s.config.Get("STATE_SECRET")), oauthStateEncrypted)
 	if err != nil {
 		log.Printf("cant decrypt state cookie, %s\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -154,7 +164,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 		return
 	}
 
-	data, err := getUserDataFromGoogle(r.FormValue("code"))
+	data, err := s.getUserDataFromGoogle(r.FormValue("code"))
 	if err != nil {
 		log.Println(err.Error())
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -174,7 +184,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 		return
 	}
 
-	token, err := CreateToken(user.ID)
+	token, err := s.CreateToken(user.ID)
 	if err != nil {
 		fmt.Fprintf(w, "error while generating jwt: %s\n", err)
 		return
@@ -183,28 +193,28 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 	cookie := http.Cookie{Name: COOKIE_JWT_NAME, Value: token, Expires: time.Now().Add(EXPIRES), HttpOnly: true, SameSite: http.SameSiteLaxMode, Path: "/"}
 	http.SetCookie(w, &cookie)
 
-	http.Redirect(w, r, os.Getenv("FRONT_URL"), 302)
+	http.Redirect(w, r, s.config.Get("FRONT_URL"), 302)
 
 }
 
-func CreateToken(userid string) (string, error) {
+func (s *myAuthServiceServer) CreateToken(userid string) (string, error) {
 	var err error
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["user_id"] = userid
 	atClaims["exp"] = time.Now().Add(EXPIRES).Unix()
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	token, err := at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
+	token, err := at.SignedString([]byte(s.config.Get("ACCESS_SECRET")))
 	if err != nil {
 		return "", err
 	}
 	return token, nil
 }
 
-func DecodeToken(token string) (string, error) {
+func (s *myAuthServiceServer) DecodeToken(token string) (string, error) {
 	claims := jwt.MapClaims{}
 	jwt, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ACCESS_SECRET")), nil
+		return []byte(s.config.Get("ACCESS_SECRET")), nil
 	})
 	if err != nil {
 		return "", err
@@ -225,10 +235,8 @@ func DecodeToken(token string) (string, error) {
 
 }
 
-func getUserDataFromGoogle(code string) ([]byte, error) {
-	// Use code to get token and get user info from Google.
-
-	token, err := googleOauthConfig.Exchange(context.Background(), code)
+func (s *myAuthServiceServer) getUserDataFromGoogle(code string) ([]byte, error) {
+	token, err := s.oauth2Config.Exchange(context.Background(), code)
 	if err != nil {
 		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
 	}

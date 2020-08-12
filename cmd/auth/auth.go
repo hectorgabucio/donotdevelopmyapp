@@ -41,9 +41,20 @@ type User struct {
 	Name string
 }
 
+<<<<<<< HEAD
 type myAuthServiceServer struct {
 	db           *gorm.DB
 	oauth2Config *oauth2.Config
+=======
+type OAuthProvider interface {
+	AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string
+	Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
+}
+
+type myAuthServiceServer struct {
+	db           *gorm.DB
+	oauth2Config OAuthProvider
+>>>>>>> feature/fix-corrupted-repo
 	config       config.ConfigProvider
 }
 

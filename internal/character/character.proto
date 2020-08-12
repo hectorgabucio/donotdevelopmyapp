@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package character;
+
+message Input {
+  string number = 1;
+}
+
+message Output {
+  int32 id = 1;
+  string name = 2;
+  string image = 3;
+}
+
+service CharacterService {
+  rpc GetCharacter(Input) returns (Output) {}
+}

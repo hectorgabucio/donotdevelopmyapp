@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+
+package auth;
+
+message Token {
+  string value = 1;
+}
+
+message User {
+  string id = 1;
+}
+
+service AuthService {
+  rpc GetUser(Token) returns (User) {}
+}

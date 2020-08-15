@@ -6,7 +6,15 @@ import (
 	"crypto/rand"
 )
 
-func Encrypt(key, data []byte) ([]byte, error) {
+type Cipher interface {
+	Encrypt(key, data []byte) ([]byte, error)
+	Decrypt(key, data []byte) ([]byte, error)
+}
+
+type CipherUtil struct {
+}
+
+func (c CipherUtil) Encrypt(key, data []byte) ([]byte, error) {
 	blockCipher, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -27,7 +35,7 @@ func Encrypt(key, data []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-func Decrypt(key, data []byte) ([]byte, error) {
+func (c CipherUtil) Decrypt(key, data []byte) ([]byte, error) {
 	blockCipher, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err

@@ -1,15 +1,73 @@
 package main
 
 import (
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/hectorgabucio/donotdevelopmyapp/test/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestBackendNoCookie(t *testing.T) {
+const STATE_VALUE = "state"
+
+func TestBackendCallback(t *testing.T) {
+
+	encodedState := base64.URLEncoding.EncodeToString([]byte(STATE_VALUE))
+
+	tests := []struct {
+		setCookie   bool
+		cookieValue string
+		canDecrypt  bool
+		formState   string
+		statusCode  int
+	}{
+		{false, "", true, "formState", http.StatusTemporaryRedirect},
+		{true, "abc", true, "formState", http.StatusTemporaryRedirect},
+		{true, "YQ==", false, "formState", http.StatusTemporaryRedirect},
+		{true, "YQ==", true, "formState", http.StatusTemporaryRedirect},
+		{true, "YQ==", true, encodedState, http.StatusTemporaryRedirect},
+	}
+
+	assert := assert.New(t)
+	for _, tt := range tests {
+		mockConfig := &mocks.ConfigProvider{}
+		mockConfig.On("Get", "STATE_SECRET").Return("thisisnotproductionlulz111111111")
+		mockOAuth := &mocks.OAuthProvider{}
+		mockCipher := &mocks.Cipher{}
+
+		var errDecrypt error
+		if !tt.canDecrypt {
+			errDecrypt = fmt.Errorf("error decrypt")
+		}
+
+		mockCipher.On("Decrypt", []byte("thisisnotproductionlulz111111111"), mock.Anything).Return([]byte(STATE_VALUE), errDecrypt)
+
+		server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth, cipherUtil: mockCipher}
+		testHandler, rr, req := prepareSUTGoogleCallback(t, server)
+
+		if tt.setCookie {
+			req.AddCookie(&http.Cookie{Name: COOKIE_STATE_NAME, Value: tt.cookieValue})
+		}
+
+		req.Form = url.Values{}
+		req.Form.Add("state", tt.formState)
+
+		testHandler.ServeHTTP(rr, req)
+
+		if status := rr.Code; status != tt.statusCode {
+			assert.Failf("error", "handler returned wrong status code: got %d want %d",
+				status, tt.statusCode)
+		}
+	}
+
+}
+
+func TestGoogleLogin(t *testing.T) {
 
 	mockConfig := &mocks.ConfigProvider{}
 	mockConfig.On("Get", "STATE_SECRET").Return("thisisnotproductionlulz111111111")
@@ -34,6 +92,16 @@ func TestBackendNoCookie(t *testing.T) {
 		t.Errorf("error no random state found in response")
 	}
 
+}
+
+func prepareSUTGoogleCallback(t *testing.T, server *myAuthServiceServer) (http.Handler, *httptest.ResponseRecorder, *http.Request) {
+	handler := http.HandlerFunc(server.oauthGoogleCallback)
+	rr := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/callback", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return handler, rr, req
 }
 
 func prepareSUTGoogleLogin(t *testing.T, server *myAuthServiceServer) (http.Handler, *httptest.ResponseRecorder, *http.Request) {

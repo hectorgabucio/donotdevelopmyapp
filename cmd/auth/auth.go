@@ -50,6 +50,7 @@ type myAuthServiceServer struct {
 	db           *gorm.DB
 	oauth2Config OAuthProvider
 	config       config.ConfigProvider
+	cipherUtil   cipher.Cipher
 }
 
 func (s *myAuthServiceServer) initDBConn() {
@@ -76,6 +77,7 @@ func (s *myAuthServiceServer) initOAuth2Config() {
 func (s *myAuthServiceServer) init() {
 	s.initDBConn()
 	s.initOAuth2Config()
+	s.cipherUtil = cipher.CipherUtil{}
 }
 
 func main() {
@@ -123,7 +125,7 @@ func (s *myAuthServiceServer) generateStateOauthCookie(w http.ResponseWriter) st
 	}
 	state := base64.URLEncoding.EncodeToString(b)
 
-	encrypted, err := cipher.Encrypt([]byte(s.config.Get("STATE_SECRET")), b)
+	encrypted, err := s.cipherUtil.Encrypt([]byte(s.config.Get("STATE_SECRET")), b)
 	if err != nil {
 		log.Fatalf("Error encrypting state: %s\n", err)
 	}
@@ -156,7 +158,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 		return
 	}
 
-	decryptedState, err := cipher.Decrypt([]byte(s.config.Get("STATE_SECRET")), oauthStateEncrypted)
+	decryptedState, err := s.cipherUtil.Decrypt([]byte(s.config.Get("STATE_SECRET")), oauthStateEncrypted)
 	if err != nil {
 		log.Printf("cant decrypt state cookie, %s\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)

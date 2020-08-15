@@ -26,13 +26,13 @@ import (
 )
 
 type UserInfo struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
+	ID    string `json:"id,omitempty"`
+	Email string `json:"email,omitempty"`
 }
 
 const COOKIE_STATE_NAME = "DONOTDEVELOPMYAPPRANDOMSTATE"
 const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
-const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
+const AUTH_GOOGLE_URL = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
 
 const EXPIRES = 24 * time.Hour
 
@@ -182,18 +182,27 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 	err = json.Unmarshal(data, &user)
 	if err != nil {
 		fmt.Fprintf(w, "error decoding json: %s\n", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	if user.ID == "" {
+		log.Println("bad response of google API, no user id in response")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
 	var userDB User
 	if err := s.db.FirstOrCreate(&userDB, &User{ID: user.ID, Name: "TOBEGENERATED"}).Error; err != nil {
 		fmt.Fprintf(w, "error saving user id: %s\n", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
 	token, err := s.CreateToken(user.ID)
 	if err != nil {
 		fmt.Fprintf(w, "error while generating jwt: %s\n", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -247,7 +256,7 @@ func (s *myAuthServiceServer) getUserDataFromGoogle(code string) ([]byte, error)
 	if err != nil {
 		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
 	}
-	response, err := http.Get(oauthGoogleUrlAPI + token.AccessToken)
+	response, err := http.Get(AUTH_GOOGLE_URL + token.AccessToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
 	}

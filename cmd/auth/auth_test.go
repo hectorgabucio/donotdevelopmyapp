@@ -11,11 +11,18 @@ import (
 	"github.com/hectorgabucio/donotdevelopmyapp/test/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"golang.org/x/oauth2"
+	"gopkg.in/h2non/gock.v1"
 )
 
 const STATE_VALUE = "state"
 
 func TestBackendCallback(t *testing.T) {
+	defer gock.Off() // Flush pending mocks after test execution
+	gock.New(AUTH_GOOGLE_URL + "accessToken").
+		Get("/").
+		Reply(200).
+		JSON(map[string]string{"id": "userid"})
 
 	encodedState := base64.URLEncoding.EncodeToString([]byte(STATE_VALUE))
 
@@ -24,13 +31,15 @@ func TestBackendCallback(t *testing.T) {
 		cookieValue string
 		canDecrypt  bool
 		formState   string
+		formCode    string
 		statusCode  int
 	}{
-		{false, "", true, "formState", http.StatusTemporaryRedirect},
-		{true, "abc", true, "formState", http.StatusTemporaryRedirect},
-		{true, "YQ==", false, "formState", http.StatusTemporaryRedirect},
-		{true, "YQ==", true, "formState", http.StatusTemporaryRedirect},
-		{true, "YQ==", true, encodedState, http.StatusTemporaryRedirect},
+		{false, "", true, "formState", "formCode", http.StatusTemporaryRedirect},
+		{true, "abc", true, "formState", "formCode", http.StatusTemporaryRedirect},
+		{true, "YQ==", false, "formState", "formCode", http.StatusTemporaryRedirect},
+		{true, "YQ==", true, "formState", "formCode", http.StatusTemporaryRedirect},
+		{true, "YQ==", true, encodedState, "errorCode", http.StatusTemporaryRedirect},
+		{true, "YQ==", true, encodedState, "formCode", http.StatusTemporaryRedirect},
 	}
 
 	assert := assert.New(t)
@@ -38,6 +47,8 @@ func TestBackendCallback(t *testing.T) {
 		mockConfig := &mocks.ConfigProvider{}
 		mockConfig.On("Get", "STATE_SECRET").Return("thisisnotproductionlulz111111111")
 		mockOAuth := &mocks.OAuthProvider{}
+		mockOAuth.On("Exchange", mock.Anything, "formCode").Return(&oauth2.Token{AccessToken: "accessToken"}, nil)
+		mockOAuth.On("Exchange", mock.Anything, "errorCode").Return(nil, fmt.Errorf("error code"))
 		mockCipher := &mocks.Cipher{}
 
 		var errDecrypt error
@@ -56,6 +67,7 @@ func TestBackendCallback(t *testing.T) {
 
 		req.Form = url.Values{}
 		req.Form.Add("state", tt.formState)
+		req.Form.Add("code", tt.formCode)
 
 		testHandler.ServeHTTP(rr, req)
 

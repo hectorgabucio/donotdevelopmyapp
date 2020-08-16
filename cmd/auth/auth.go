@@ -209,7 +209,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 	cookie := http.Cookie{Name: COOKIE_JWT_NAME, Value: token, Expires: time.Now().Add(EXPIRES), HttpOnly: true, SameSite: http.SameSiteLaxMode, Path: "/"}
 	http.SetCookie(w, &cookie)
 
-	http.Redirect(w, r, s.config.Get("FRONT_URL"), 302)
+	http.Redirect(w, r, s.config.Get("FRONT_URL"), http.StatusFound)
 
 }
 

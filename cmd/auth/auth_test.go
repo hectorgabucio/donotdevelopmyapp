@@ -35,19 +35,22 @@ func TestBackendCallback(t *testing.T) {
 		formState   string
 		formCode    string
 		statusCode  int
+		jwtSet      bool
 	}{
-		{false, "", true, "formState", "formCode", http.StatusTemporaryRedirect},
-		{true, "abc", true, "formState", "formCode", http.StatusTemporaryRedirect},
-		{true, "YQ==", false, "formState", "formCode", http.StatusTemporaryRedirect},
-		{true, "YQ==", true, "formState", "formCode", http.StatusTemporaryRedirect},
-		{true, "YQ==", true, encodedState, "errorCode", http.StatusTemporaryRedirect},
-		{true, "YQ==", true, encodedState, "formCode", http.StatusTemporaryRedirect},
+		{false, "", true, "formState", "formCode", http.StatusTemporaryRedirect, false},
+		{true, "abc", true, "formState", "formCode", http.StatusTemporaryRedirect, false},
+		{true, "YQ==", false, "formState", "formCode", http.StatusTemporaryRedirect, false},
+		{true, "YQ==", true, "formState", "formCode", http.StatusTemporaryRedirect, false},
+		{true, "YQ==", true, encodedState, "errorCode", http.StatusTemporaryRedirect, false},
+		{true, "YQ==", true, encodedState, "formCode", http.StatusFound, true},
 	}
 
 	assert := assert.New(t)
 	for _, tt := range tests {
 		mockConfig := &mocks.ConfigProvider{}
 		mockConfig.On("Get", "STATE_SECRET").Return("thisisnotproductionlulz111111111")
+		mockConfig.On("Get", "ACCESS_SECRET").Return("thisisnotproductionlulz111111111")
+		mockConfig.On("Get", "FRONT_URL").Return("/urlToFront")
 		mockOAuth := &mocks.OAuthProvider{}
 		mockOAuth.On("Exchange", mock.Anything, "formCode").Return(&oauth2.Token{AccessToken: "accessToken"}, nil)
 		mockOAuth.On("Exchange", mock.Anything, "errorCode").Return(nil, fmt.Errorf("error code"))
@@ -90,18 +93,27 @@ func TestBackendCallback(t *testing.T) {
 			assert.Failf("error", "handler returned wrong status code: got %d want %d",
 				status, tt.statusCode)
 		}
+
+		if tt.jwtSet {
+			cookies := rr.Result().Cookies()
+			if len(cookies) > 0 && cookies[0].Name != COOKIE_JWT_NAME {
+				assert.Failf("error", "no cookie jwt found")
+			}
+		}
 	}
 
 }
 
 func TestGoogleLogin(t *testing.T) {
+	mockCipher := &mocks.Cipher{}
+	mockCipher.On("Encrypt", []byte("thisisnotproductionlulz111111111"), mock.Anything).Return([]byte("encripted"), nil)
 
 	mockConfig := &mocks.ConfigProvider{}
 	mockConfig.On("Get", "STATE_SECRET").Return("thisisnotproductionlulz111111111")
 
 	mockOAuth := &mocks.OAuthProvider{}
 	mockOAuth.On("AuthCodeURL", mock.AnythingOfType("string")).Return("URLRedirect")
-	server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth}
+	server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth, cipherUtil: mockCipher}
 
 	testHandler, rr, req := prepareSUTGoogleLogin(t, server)
 	testHandler.ServeHTTP(rr, req)

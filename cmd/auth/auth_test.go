@@ -8,7 +8,9 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/hectorgabucio/donotdevelopmyapp/test/mocks"
+	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/oauth2"
@@ -18,7 +20,7 @@ import (
 const STATE_VALUE = "state"
 
 func TestBackendCallback(t *testing.T) {
-	defer gock.Off() // Flush pending mocks after test execution
+	defer gock.Off()
 	gock.New(AUTH_GOOGLE_URL + "accessToken").
 		Get("/").
 		Reply(200).
@@ -55,10 +57,23 @@ func TestBackendCallback(t *testing.T) {
 		if !tt.canDecrypt {
 			errDecrypt = fmt.Errorf("error decrypt")
 		}
-
 		mockCipher.On("Decrypt", []byte("thisisnotproductionlulz111111111"), mock.Anything).Return([]byte(STATE_VALUE), errDecrypt)
 
-		server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth, cipherUtil: mockCipher}
+		db, sqlmock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		assert.NoError(err)
+		gdb, err := gorm.Open("postgres", db) // open gorm db
+		assert.NoError(err)
+		defer gdb.Close()
+
+		rows := sqlmock.
+			NewRows([]string{"id", "name"}).
+			AddRow("userid", "TOBEGENERATED")
+		sqlmock.
+			ExpectQuery(`SELECT * FROM "users" WHERE ("users"."id" = $1) AND ("users"."name" = $2) ORDER BY "users"."id" ASC LIMIT 1`).
+			WillReturnRows(rows)
+		sqlmock.ExpectBegin()
+		server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth, cipherUtil: mockCipher, db: gdb}
+
 		testHandler, rr, req := prepareSUTGoogleCallback(t, server)
 
 		if tt.setCookie {

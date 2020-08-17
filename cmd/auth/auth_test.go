@@ -56,6 +56,9 @@ func TestBackendCallback(t *testing.T) {
 		mockOAuth.On("Exchange", mock.Anything, "errorCode").Return(nil, fmt.Errorf("error code"))
 		mockCipher := &mocks.Cipher{}
 
+		mockJwt := &mocks.JwtProvider{}
+		mockJwt.On("CreateToken", "userid", mock.Anything, EXPIRES).Return("jwtToken", nil)
+
 		var errDecrypt error
 		if !tt.canDecrypt {
 			errDecrypt = fmt.Errorf("error decrypt")
@@ -75,7 +78,7 @@ func TestBackendCallback(t *testing.T) {
 			ExpectQuery(`SELECT * FROM "users" WHERE ("users"."id" = $1) AND ("users"."name" = $2) ORDER BY "users"."id" ASC LIMIT 1`).
 			WillReturnRows(rows)
 		sqlmock.ExpectBegin()
-		server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth, cipherUtil: mockCipher, db: gdb}
+		server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth, cipherUtil: mockCipher, db: gdb, jwt: mockJwt}
 
 		testHandler, rr, req := prepareSUTGoogleCallback(t, server)
 

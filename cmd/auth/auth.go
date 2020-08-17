@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/cipher"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/config"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/jwt"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -24,6 +24,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
+
+const EXPIRES = 24 * time.Hour
 
 type UserInfo struct {
 	ID    string `json:"id,omitempty"`
@@ -33,8 +35,6 @@ type UserInfo struct {
 const COOKIE_STATE_NAME = "DONOTDEVELOPMYAPPRANDOMSTATE"
 const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
 const AUTH_GOOGLE_URL = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
-
-const EXPIRES = 24 * time.Hour
 
 type User struct {
 	ID   string `gorm:"primary_key"`
@@ -51,6 +51,7 @@ type myAuthServiceServer struct {
 	oauth2Config OAuthProvider
 	config       config.ConfigProvider
 	cipherUtil   cipher.Cipher
+	jwt          jwt.JwtProvider
 }
 
 func (s *myAuthServiceServer) initDBConn() {
@@ -78,6 +79,7 @@ func (s *myAuthServiceServer) init() {
 	s.initDBConn()
 	s.initOAuth2Config()
 	s.cipherUtil = cipher.CipherUtil{}
+	s.jwt = jwt.JwtImpl{}
 }
 
 func main() {
@@ -111,7 +113,7 @@ func main() {
 }
 
 func (s *myAuthServiceServer) GetUser(ctx context.Context, token *auth.Token) (*auth.User, error) {
-	userId, err := s.DecodeToken(token.Value)
+	userId, err := s.jwt.DecodeToken(token.Value, []byte(s.config.Get("ACCESS_SECRET")))
 	return &auth.User{Id: userId}, err
 }
 
@@ -199,7 +201,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 		return
 	}
 
-	token, err := s.CreateToken(user.ID)
+	token, err := s.jwt.CreateToken(user.ID, []byte(s.config.Get("ACCESS_SECRET")), EXPIRES)
 	if err != nil {
 		fmt.Fprintf(w, "error while generating jwt: %s\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -210,44 +212,6 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 	http.SetCookie(w, &cookie)
 
 	http.Redirect(w, r, s.config.Get("FRONT_URL"), http.StatusFound)
-
-}
-
-func (s *myAuthServiceServer) CreateToken(userid string) (string, error) {
-	var err error
-	atClaims := jwt.MapClaims{}
-	atClaims["authorized"] = true
-	atClaims["user_id"] = userid
-	atClaims["exp"] = time.Now().Add(EXPIRES).Unix()
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	token, err := at.SignedString([]byte(s.config.Get("ACCESS_SECRET")))
-	if err != nil {
-		return "", err
-	}
-	return token, nil
-}
-
-func (s *myAuthServiceServer) DecodeToken(token string) (string, error) {
-	claims := jwt.MapClaims{}
-	jwt, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(s.config.Get("ACCESS_SECRET")), nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if !jwt.Valid {
-		return "", fmt.Errorf("Token not valid")
-	}
-
-	for key, val := range claims {
-		if key == "user_id" {
-			return val.(string), nil
-		}
-
-	}
-
-	return "", fmt.Errorf("Could not find user id claim in decoded token")
 
 }
 

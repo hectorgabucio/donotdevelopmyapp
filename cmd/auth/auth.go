@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -17,9 +16,8 @@ import (
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/cipher"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/config"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/jwt"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/oauth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -34,24 +32,18 @@ type UserInfo struct {
 
 const COOKIE_STATE_NAME = "DONOTDEVELOPMYAPPRANDOMSTATE"
 const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
-const AUTH_GOOGLE_URL = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
 
 type User struct {
 	ID   string `gorm:"primary_key"`
 	Name string
 }
 
-type OAuthProvider interface {
-	AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string
-	Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
-}
-
 type myAuthServiceServer struct {
-	db           *gorm.DB
-	oauth2Config OAuthProvider
-	config       config.ConfigProvider
-	cipherUtil   cipher.Cipher
-	jwt          jwt.JwtProvider
+	db         *gorm.DB
+	config     config.ConfigProvider
+	cipherUtil cipher.Cipher
+	jwt        jwt.JwtProvider
+	googleAuth oauth.GoogleActions
 }
 
 func (s *myAuthServiceServer) initDBConn() {
@@ -65,21 +57,11 @@ func (s *myAuthServiceServer) initDBConn() {
 	s.db = db
 }
 
-func (s *myAuthServiceServer) initOAuth2Config() {
-	s.oauth2Config = &oauth2.Config{
-		RedirectURL:  os.Getenv("REDIRECT_URL"),
-		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
-		Endpoint:     google.Endpoint,
-	}
-}
-
 func (s *myAuthServiceServer) init() {
 	s.initDBConn()
-	s.initOAuth2Config()
 	s.cipherUtil = cipher.CipherUtil{}
 	s.jwt = jwt.JwtImpl{}
+	s.googleAuth = oauth.NewGoogleActions()
 }
 
 func main() {
@@ -140,7 +122,7 @@ func (s *myAuthServiceServer) generateStateOauthCookie(w http.ResponseWriter) st
 
 func (s *myAuthServiceServer) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	oauthState := s.generateStateOauthCookie(w)
-	url := s.oauth2Config.AuthCodeURL(oauthState)
+	url := s.googleAuth.AuthCodeURL(oauthState)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -173,7 +155,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 		return
 	}
 
-	data, err := s.getUserDataFromGoogle(r.FormValue("code"))
+	data, err := s.googleAuth.GetUserDataFromGoogle(r.FormValue("code"))
 	if err != nil {
 		log.Println(err.Error())
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -213,21 +195,4 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 
 	http.Redirect(w, r, s.config.Get("FRONT_URL"), http.StatusFound)
 
-}
-
-func (s *myAuthServiceServer) getUserDataFromGoogle(code string) ([]byte, error) {
-	token, err := s.oauth2Config.Exchange(context.Background(), code)
-	if err != nil {
-		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
-	}
-	response, err := http.Get(AUTH_GOOGLE_URL + token.AccessToken)
-	if err != nil {
-		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
-	}
-	defer response.Body.Close()
-	contents, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed read response: %s", err.Error())
-	}
-	return contents, nil
 }

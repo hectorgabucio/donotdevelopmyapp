@@ -41,7 +41,7 @@ golangci-lint:
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: mocks
+test:
 	go test -race -v ./...
 	cd $(WEBSITE) && npm test -- --watchAll=false;
 

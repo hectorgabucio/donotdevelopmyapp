@@ -39,10 +39,14 @@ golangci-lint:
 	@echo Running golangci-lint
 	golangci-lint run ./...
 
-## Runs any lints and unit tests defined for the server and webapp, if they exist.
+## Runs any lints and unit tests defined for the server, if they exist.
 .PHONY: test
-test:
+test-back:
 	go test -race -v ./...
+
+## Runs any lints and unit tests defined for the webapp if they exist
+.PHONY: test-front
+test-front:
 	cd $(WEBSITE) && npm test -- --watchAll=false;
 
 ## Runs tests and generates coverage files

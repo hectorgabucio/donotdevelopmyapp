@@ -13,18 +13,11 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"golang.org/x/oauth2"
-	"gopkg.in/h2non/gock.v1"
 )
 
 const STATE_VALUE = "state"
 
 func TestBackendCallback(t *testing.T) {
-	defer gock.Off()
-	gock.New(AUTH_GOOGLE_URL + "accessToken").
-		Get("/").
-		Reply(200).
-		JSON(map[string]string{"id": "userid"})
 
 	encodedState := base64.URLEncoding.EncodeToString([]byte(STATE_VALUE))
 
@@ -51,11 +44,12 @@ func TestBackendCallback(t *testing.T) {
 		mockConfig.On("Get", "STATE_SECRET").Return("thisisnotproductionlulz111111111")
 		mockConfig.On("Get", "ACCESS_SECRET").Return("thisisnotproductionlulz111111111")
 		mockConfig.On("Get", "FRONT_URL").Return("/urlToFront")
-		mockOAuth := &mocks.OAuthProvider{}
-		mockOAuth.On("Exchange", mock.Anything, "formCode").Return(&oauth2.Token{AccessToken: "accessToken"}, nil)
-		mockOAuth.On("Exchange", mock.Anything, "errorCode").Return(nil, fmt.Errorf("error code"))
-		mockCipher := &mocks.Cipher{}
 
+		mockAuth := &mocks.GoogleActions{}
+		mockAuth.On("GetUserDataFromGoogle", "formCode").Return([]byte(`{"id": "userid", "email": "email"}`), nil)
+		mockAuth.On("GetUserDataFromGoogle", "errorCode").Return(nil, fmt.Errorf("error code"))
+
+		mockCipher := &mocks.Cipher{}
 		mockJwt := &mocks.JwtProvider{}
 		mockJwt.On("CreateToken", "userid", mock.Anything, EXPIRES).Return("jwtToken", nil)
 
@@ -78,7 +72,7 @@ func TestBackendCallback(t *testing.T) {
 			ExpectQuery(`SELECT * FROM "users" WHERE ("users"."id" = $1) AND ("users"."name" = $2) ORDER BY "users"."id" ASC LIMIT 1`).
 			WillReturnRows(rows)
 		sqlmock.ExpectBegin()
-		server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth, cipherUtil: mockCipher, db: gdb, jwt: mockJwt}
+		server := &myAuthServiceServer{config: mockConfig, googleAuth: mockAuth, cipherUtil: mockCipher, db: gdb, jwt: mockJwt}
 
 		testHandler, rr, req := prepareSUTGoogleCallback(t, server)
 
@@ -114,9 +108,10 @@ func TestGoogleLogin(t *testing.T) {
 	mockConfig := &mocks.ConfigProvider{}
 	mockConfig.On("Get", "STATE_SECRET").Return("thisisnotproductionlulz111111111")
 
-	mockOAuth := &mocks.OAuthProvider{}
-	mockOAuth.On("AuthCodeURL", mock.AnythingOfType("string")).Return("URLRedirect")
-	server := &myAuthServiceServer{config: mockConfig, oauth2Config: mockOAuth, cipherUtil: mockCipher}
+	mockAuth := &mocks.GoogleActions{}
+	mockAuth.On("AuthCodeURL", mock.AnythingOfType("string")).Return("URLRedirect")
+
+	server := &myAuthServiceServer{config: mockConfig, cipherUtil: mockCipher, googleAuth: mockAuth}
 
 	testHandler, rr, req := prepareSUTGoogleLogin(t, server)
 	testHandler.ServeHTTP(rr, req)

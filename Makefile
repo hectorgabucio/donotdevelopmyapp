@@ -40,7 +40,7 @@ golangci-lint:
 	golangci-lint run ./...
 
 ## Runs any lints and unit tests defined for the server, if they exist.
-.PHONY: test
+.PHONY: test-back
 test-back:
 	go test -race -v ./...
 
@@ -50,6 +50,7 @@ test-front:
 	cd $(WEBSITE) && npm ci && npm test -- --watchAll=false;
 
 ## Runs test on backend and frontend
+.PHONY: test
 test: test-back test-front
 
 ## Runs tests and generates coverage files

@@ -8,18 +8,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/cipher"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/config"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/data"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/jwt"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/oauth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
@@ -33,32 +32,16 @@ type UserInfo struct {
 const COOKIE_STATE_NAME = "DONOTDEVELOPMYAPPRANDOMSTATE"
 const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
 
-type User struct {
-	ID   string `gorm:"primary_key"`
-	Name string
-}
-
 type myAuthServiceServer struct {
-	db         *gorm.DB
-	config     config.ConfigProvider
-	cipherUtil cipher.Cipher
-	jwt        jwt.JwtProvider
-	googleAuth oauth.GoogleActions
-}
-
-func (s *myAuthServiceServer) initDBConn() {
-	addr := fmt.Sprintf("postgresql://root@%s:%s/postgres?sslmode=disable", os.Getenv("DB_SERVICE_HOST"), os.Getenv("DB_SERVICE_PORT"))
-	db, err := gorm.Open("postgres", addr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	db.LogMode(true)
-	db.AutoMigrate(&User{})
-	s.db = db
+	userRepository data.UserRepository
+	config         config.ConfigProvider
+	cipherUtil     cipher.Cipher
+	jwt            jwt.JwtProvider
+	googleAuth     oauth.GoogleActions
 }
 
 func (s *myAuthServiceServer) init() {
-	s.initDBConn()
+	s.userRepository = data.NewUserRepository()
 	s.cipherUtil = cipher.CipherUtil{}
 	s.jwt = jwt.JwtImpl{}
 	s.googleAuth = oauth.NewGoogleActions()
@@ -71,7 +54,7 @@ func main() {
 
 	authServer := &myAuthServiceServer{config: config.OsEnv{}}
 	authServer.init()
-	defer authServer.db.Close()
+	defer authServer.userRepository.CloseConn()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/login", authServer.handleGoogleLogin)
@@ -155,7 +138,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 		return
 	}
 
-	data, err := s.googleAuth.GetUserDataFromGoogle(r.FormValue("code"))
+	userData, err := s.googleAuth.GetUserDataFromGoogle(r.FormValue("code"))
 	if err != nil {
 		log.Println(err.Error())
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -163,7 +146,7 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 	}
 
 	var user UserInfo
-	err = json.Unmarshal(data, &user)
+	err = json.Unmarshal(userData, &user)
 	if err != nil {
 		fmt.Fprintf(w, "error decoding json: %s\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -176,8 +159,8 @@ func (s *myAuthServiceServer) oauthGoogleCallback(w http.ResponseWriter, r *http
 		return
 	}
 
-	var userDB User
-	if err := s.db.FirstOrCreate(&userDB, &User{ID: user.ID, Name: "TOBEGENERATED"}).Error; err != nil {
+	var userDB data.User
+	if err := s.userRepository.GetOrCreate(&userDB, &data.User{ID: user.ID, Name: "TOBEGENERATED"}); err != nil {
 		fmt.Fprintf(w, "error saving user id: %s\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return

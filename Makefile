@@ -49,6 +49,9 @@ test-back:
 test-front:
 	cd $(WEBSITE) && npm ci && npm test -- --watchAll=false;
 
+## Runs test on backend and frontend
+test: test-back test-front
+
 ## Runs tests and generates coverage files
 .PHONY: cov
 cov: check-style

@@ -55,7 +55,7 @@ test: test-back test-front
 
 ## Runs tests and generates coverage files
 .PHONY: cov
-cov: check-style
+cov:
 	go test -race -coverprofile=coverage.txt -covermode=atomic -v ./...
 
 ## Autogenerates mocks

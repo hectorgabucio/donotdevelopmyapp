@@ -47,16 +47,12 @@ test-back:
 ## Runs any lints and unit tests defined for the webapp if they exist
 .PHONY: test-front
 test-front:
-	cd $(WEBSITE) && npm test -- --watchAll=false;
+	cd $(WEBSITE) && npm ci && npm test -- --watchAll=false;
 
 ## Runs tests and generates coverage files
 .PHONY: cov
 cov: check-style
-	#go test -race -cover -coverprofile=c.out -v ./...
 	go test -race -coverprofile=coverage.txt -covermode=atomic -v ./...
-	#go tool cover -html=c.out -o coverage.html
-	#rm -rf c.out
-
 
 ## Autogenerates mocks
 .PHONY: mocks

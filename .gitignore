@@ -1,4 +1,4 @@
-data
+deployments/data
 auth.env
 tls/ca.cert
 tls/ca.key

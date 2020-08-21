@@ -15,9 +15,12 @@ var (
 	instance *gorm.DB
 )
 
+// USERS //////////////////////////////////////////////////////////////////////////////
+
 type UserRepository interface {
 	CloseConn()
 	GetOrCreate(userResult *User, userWhere *User) error
+	AddCharacterToUser(character *Character, userId string) error
 }
 
 type UserRepositoryImpl struct {
@@ -32,13 +35,38 @@ func (u *UserRepositoryImpl) GetOrCreate(userResult *User, userWhere *User) erro
 	return u.DB.FirstOrCreate(userResult, userWhere).Error
 }
 
+func (u *UserRepositoryImpl) AddCharacterToUser(character *Character, userId string) error {
+	var user User
+	u.DB.First(&user, "id = ?", userId)
+	if user.ID == "" {
+		return fmt.Errorf("Error, no user found for id %s", userId)
+	}
+
+	var characterFound Character
+	if err := u.DB.FirstOrCreate(&characterFound, character).Error; err != nil {
+		return err
+	}
+
+	return u.DB.Model(&user).Association("Characters").Append(characterFound).Error
+
+}
+
 type User struct {
-	ID   string `gorm:"primary_key"`
-	Name string
+	ID         string `gorm:"primary_key"`
+	Name       string
+	Characters []Character `gorm:"many2many:user_characters;association_foreignkey:id;foreignkey:id"`
 }
 
 func NewUserRepository() UserRepository {
 	return &UserRepositoryImpl{DB: initConnection()}
+}
+
+// CHARACTERS FROM USERS ////////////////////////////////////////////////////////////////////
+
+type Character struct {
+	ID    string `gorm:"primary_key"`
+	Name  string
+	Image string
 }
 
 func initConnection() *gorm.DB {
@@ -49,6 +77,7 @@ func initConnection() *gorm.DB {
 			log.Fatal(err)
 		}
 		db.LogMode(true)
+		db.AutoMigrate(&Character{})
 		db.AutoMigrate(&User{})
 		instance = db
 	})

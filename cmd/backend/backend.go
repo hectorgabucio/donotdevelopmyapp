@@ -11,16 +11,21 @@ import (
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/data"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
+
+const HEADER_USER = "X-User-ID"
 
 type app struct {
 	randomClient    random.RandomServiceClient
 	characterClient character.CharacterServiceClient
 	authClient      auth.AuthServiceClient
+	userRepository  data.UserRepository
 }
 
 type characterJson struct {
@@ -62,12 +67,13 @@ func (app *app) securedMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		log.Println("Authorized, user is", user)
+		r.Header.Set(HEADER_USER, user.Id)
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (rh *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	message, err := rh.randomClient.GetRandom(context.Background(), &random.RandomInput{Max: 1000})
+func (app *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	message, err := app.randomClient.GetRandom(context.Background(), &random.RandomInput{Max: 1000})
 	if err != nil {
 		log.Printf("error while saying hello to random micro %s", err)
 		w.WriteHeader(500)
@@ -75,7 +81,7 @@ func (rh *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	numberStr := strconv.FormatUint(message.Number, 10)
-	character, err := rh.characterClient.GetCharacter(context.Background(), &character.Input{Number: numberStr})
+	character, err := app.characterClient.GetCharacter(context.Background(), &character.Input{Number: numberStr})
 	if err != nil {
 		log.Printf("Error while getting random character %s", err)
 		w.WriteHeader(500)
@@ -85,6 +91,13 @@ func (rh *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if character.Name == "" {
 		log.Printf("No character found")
 		w.WriteHeader(404)
+		return
+	}
+
+	if err = app.userRepository.AddCharacterToUser(&data.Character{
+		ID: strconv.FormatInt(int64(character.Id), 10), Name: character.Name, Image: character.Image}, r.Header.Get(HEADER_USER)); err != nil {
+		log.Println("error trying to add character to user collection:", err)
+		w.WriteHeader(500)
 		return
 	}
 
@@ -122,7 +135,7 @@ func main() {
 	defer connAuth.Close()
 	authClient := auth.NewAuthServiceClient(connAuth)
 
-	app := &app{randomClient: randomClient, characterClient: characterClient, authClient: authClient}
+	app := &app{randomClient: randomClient, characterClient: characterClient, authClient: authClient, userRepository: data.NewUserRepository()}
 	handler := http.HandlerFunc(app.ServeHTTP)
 
 	mux := http.NewServeMux()

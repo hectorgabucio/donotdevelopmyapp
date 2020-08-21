@@ -59,9 +59,9 @@ func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*charac
 		return nil, err
 	}
 
-	log.Println(character)
-
-	a.Cache.Set(input.Number, character, cache.NoExpiration)
+	if character.Name != "" {
+		a.Cache.Set(input.Number, character, cache.NoExpiration)
+	}
 
 	return character, nil
 }

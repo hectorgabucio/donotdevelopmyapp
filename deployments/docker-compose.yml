@@ -52,12 +52,15 @@ services:
       - AUTH_MICRO_SERVICE_HOST=auth-micro
       - AUTH_MICRO_SERVICE_PORT=8081
       - FRONT_URL=https://localhost
+      - DB_SERVICE_HOST=db
+      - DB_SERVICE_PORT=26257
     volumes:
       - ../tls:/tls:ro
     ports:
       - 8080:8080
     depends_on:
       - random-micro
+      - db
 
   character-micro:
     build:

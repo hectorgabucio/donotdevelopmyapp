@@ -36,25 +36,50 @@ func (u *UserRepositoryImpl) GetOrCreate(userResult *User, userWhere *User) erro
 }
 
 func (u *UserRepositoryImpl) AddCharacterToUser(character *Character, userId string) error {
+	tx := u.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Error; err != nil {
+		return err
+	}
+
 	var user User
-	u.DB.First(&user, "id = ?", userId)
+	tx.First(&user, "id = ?", userId)
 	if user.ID == "" {
+		tx.Rollback()
 		return fmt.Errorf("Error, no user found for id %s", userId)
 	}
 
 	var characterFound Character
-	if err := u.DB.FirstOrCreate(&characterFound, character).Error; err != nil {
+	if err := tx.FirstOrCreate(&characterFound, character).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	return u.DB.Model(&user).Association("Characters").Append(characterFound).Error
+	var userCharacter UserCharacter
+	if err := tx.FirstOrCreate(&userCharacter, &UserCharacter{UserId: user.ID, CharacterId: characterFound.ID}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	userCharacter.Count = userCharacter.Count + 1
+
+	if err := tx.Save(&userCharacter).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 
 }
 
 type User struct {
-	ID         string `gorm:"primary_key"`
-	Name       string
-	Characters []Character `gorm:"many2many:user_characters;association_foreignkey:id;foreignkey:id"`
+	ID   string `gorm:"primary_key"`
+	Name string
 }
 
 func NewUserRepository() UserRepository {
@@ -69,6 +94,14 @@ type Character struct {
 	Image string
 }
 
+type UserCharacter struct {
+	UserId      string `gorm:"primary_key"`
+	CharacterId string `gorm:"primary_key"`
+	Count       int
+	User        User      `gorm:"foreignkey:UserId"`
+	Character   Character `gorm:"foreignkey:CharacterId"`
+}
+
 func initConnection() *gorm.DB {
 	once.Do(func() { // <-- atomic, does not allow repeating
 		addr := fmt.Sprintf("postgresql://root@%s:%s/postgres?sslmode=disable", os.Getenv("DB_SERVICE_HOST"), os.Getenv("DB_SERVICE_PORT"))
@@ -79,6 +112,7 @@ func initConnection() *gorm.DB {
 		db.LogMode(true)
 		db.AutoMigrate(&Character{})
 		db.AutoMigrate(&User{})
+		db.AutoMigrate(&UserCharacter{})
 		instance = db
 	})
 	return instance

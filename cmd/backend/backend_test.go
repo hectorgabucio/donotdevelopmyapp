@@ -8,6 +8,7 @@ import (
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/data"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/random"
 	"github.com/hectorgabucio/donotdevelopmyapp/test/mocks"
 	"github.com/stretchr/testify/assert"
@@ -47,19 +48,20 @@ func TestBackend(t *testing.T) {
 	tests := []struct {
 		randomClient    *mocks.RandomServiceClient
 		characterClient *mocks.CharacterServiceClient
+		userRepository  *mocks.UserRepository
 		statusCode      int
 	}{
-		{errorRandomClient(), nil, 500},
-		{validRandomClient(), errorCharacterClient(), 500},
-		{validRandomClient(), noCharacterClient(), 404},
-		{validRandomClient(), validCharacterClient(), 200},
+		{errorRandomClient(), nil, mockRepository(), 500},
+		{validRandomClient(), errorCharacterClient(), mockRepository(), 500},
+		{validRandomClient(), noCharacterClient(), mockRepository(), 404},
+		{validRandomClient(), validCharacterClient(), mockRepository(), 200},
 	}
 
 	assert := assert.New(t)
 	for _, tt := range tests {
 
 		app := &app{randomClient: tt.randomClient, characterClient: tt.characterClient,
-			authClient: validCookieClient()}
+			authClient: validCookieClient(), userRepository: tt.userRepository}
 		testHandler, rr, req := prepareSUT(t, app)
 		req.AddCookie(&http.Cookie{Name: COOKIE_JWT_NAME, Value: AUTHCOOKIE_VALUE})
 		testHandler.ServeHTTP(rr, req)
@@ -83,6 +85,12 @@ func prepareSUT(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorde
 
 	return testHandler, rr, req
 
+}
+
+func mockRepository() *mocks.UserRepository {
+	userRepository := &mocks.UserRepository{}
+	userRepository.On("AddCharacterToUser", &data.Character{ID: "10", Name: "name", Image: ""}, "").Return(nil)
+	return userRepository
 }
 
 func errorAuthCookieClient() *mocks.AuthServiceClient {

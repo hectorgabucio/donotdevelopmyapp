@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -54,6 +55,7 @@ func TestBackend(t *testing.T) {
 		{errorRandomClient(), nil, mockRepository(), 500},
 		{validRandomClient(), errorCharacterClient(), mockRepository(), 500},
 		{validRandomClient(), noCharacterClient(), mockRepository(), 404},
+		{validRandomClient(), validCharacterClient(), mockRepositoryError(), 500},
 		{validRandomClient(), validCharacterClient(), mockRepository(), 200},
 	}
 
@@ -85,6 +87,12 @@ func prepareSUT(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorde
 
 	return testHandler, rr, req
 
+}
+
+func mockRepositoryError() *mocks.UserRepository {
+	userRepository := &mocks.UserRepository{}
+	userRepository.On("AddCharacterToUser", &data.Character{ID: "10", Name: "name", Image: ""}, "").Return(errors.New("error repo"))
+	return userRepository
 }
 
 func mockRepository() *mocks.UserRepository {

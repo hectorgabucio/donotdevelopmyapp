@@ -57,13 +57,13 @@ func (app *app) securedMiddleware(next http.Handler) http.Handler {
 		authCookie, err := r.Cookie(COOKIE_JWT_NAME)
 		if err != nil {
 			log.Println("No cookie found on secure request, aborting")
-			http.Error(w, "Not authorized", 401)
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 		user, err := app.authClient.GetUser(context.Background(), &auth.Token{Value: authCookie.Value})
 		if err != nil {
 			log.Println("Error validating auth cookie, aborting", err)
-			http.Error(w, "Not authorized", 401)
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 		log.Println("Authorized, user is", user)
@@ -72,11 +72,21 @@ func (app *app) securedMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (app *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (app *app) GetCharactersOfUser(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+}
+
+func (app *app) AddNewCharacterForUser(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
 	message, err := app.randomClient.GetRandom(context.Background(), &random.RandomInput{Max: 1000})
 	if err != nil {
 		log.Printf("error while saying hello to random micro %s", err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -84,20 +94,20 @@ func (app *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	character, err := app.characterClient.GetCharacter(context.Background(), &character.Input{Number: numberStr})
 	if err != nil {
 		log.Printf("Error while getting random character %s", err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if character.Name == "" {
 		log.Printf("No character found")
-		w.WriteHeader(404)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	if err = app.userRepository.AddCharacterToUser(&data.Character{
 		ID: strconv.FormatInt(int64(character.Id), 10), Name: character.Name, Image: character.Image}, r.Header.Get(HEADER_USER)); err != nil {
 		log.Println("error trying to add character to user collection:", err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -136,9 +146,11 @@ func main() {
 	authClient := auth.NewAuthServiceClient(connAuth)
 
 	app := &app{randomClient: randomClient, characterClient: characterClient, authClient: authClient, userRepository: data.NewUserRepository()}
-	handler := http.HandlerFunc(app.ServeHTTP)
+	handlerAddNewCharacter := http.HandlerFunc(app.AddNewCharacterForUser)
+	handlerGetCharactersOfUser := http.HandlerFunc(app.GetCharactersOfUser)
 
 	mux := http.NewServeMux()
-	mux.Handle("/random", corsMiddleware(app.securedMiddleware((logMiddleware(handler)))))
+	mux.Handle("/characters", corsMiddleware(app.securedMiddleware((logMiddleware(handlerAddNewCharacter)))))
+	mux.Handle("/characters/me", corsMiddleware(app.securedMiddleware((logMiddleware(handlerGetCharactersOfUser)))))
 	log.Fatal(server.ServeHTTP(mux))
 }

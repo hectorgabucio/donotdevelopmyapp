@@ -80,6 +80,6 @@ export const Dashboard = () => {
 };
 
 async function getRandomCharacter() {
-  const resp = await axios.get('/random');
+  const resp = await axios.post('/characters');
   return resp.status === 200 ? resp.data : null;
 }

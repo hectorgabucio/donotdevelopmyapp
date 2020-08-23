@@ -75,12 +75,12 @@ func TestBackend(t *testing.T) {
 }
 
 func prepareSUT(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorder, *http.Request) {
-	handler := http.HandlerFunc(app.ServeHTTP)
+	handler := http.HandlerFunc(app.AddNewCharacterForUser)
 	testHandler := corsMiddleware(app.securedMiddleware((logMiddleware(handler))))
 
 	rr := httptest.NewRecorder()
 
-	req, err := http.NewRequest("GET", "/random", nil)
+	req, err := http.NewRequest("POST", "/characters", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

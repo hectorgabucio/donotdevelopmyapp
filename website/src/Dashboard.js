@@ -14,8 +14,8 @@ import { FormHelperText } from '@material-ui/core';
 
 const useStyles = makeStyles({
   root: {
-    width: 345,
-    height: 450,
+    width: 200,
+    height: 300,
     margin: 5,
   },
   notFoundRoot: {
@@ -26,7 +26,7 @@ const useStyles = makeStyles({
   cardsContainer: {
     display: 'flex',
     flexWrap: 'wrap',
-    justifyContent: 'space-evenly',
+    justifyContent: 'center',
     alignItems: 'center',
   },
 });
@@ -77,19 +77,11 @@ export const Dashboard = () => {
                   title={character.character.name}
                 />
                 <CardContent>
-                  <Typography gutterBottom variant="h5" component="h2">
+                  <Typography gutterBottom component="h3">
                     {character.character.name}
                   </Typography>
                 </CardContent>
               </CardActionArea>
-              <CardActions>
-                <Button size="small" color="primary">
-                  Share
-                </Button>
-                <Button size="small" color="primary">
-                  Learn More
-                </Button>
-              </CardActions>
             </Card>
           );
         })}

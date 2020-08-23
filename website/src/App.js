@@ -15,9 +15,11 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import InboxIcon from '@material-ui/icons/MoveToInbox';
+import CollectionsIcon from '@material-ui/icons/Collections';
+import AddToPhotosIcon from '@material-ui/icons/AddToPhotos';
 import MailIcon from '@material-ui/icons/Mail';
 import { Dashboard } from './Dashboard';
+import Mail from '@material-ui/icons/Mail';
 /*
 export default function App() {
   return <Dashboard></Dashboard>;
@@ -151,12 +153,13 @@ export default function App() {
         </div>
         <Divider />
         <List>
-          {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-            <ListItem button key={text}>
-              <ListItemIcon>
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-              </ListItemIcon>
-              <ListItemText primary={text} />
+          {[
+            { title: 'My collection', icon: <CollectionsIcon /> },
+            { title: 'Get a new card', icon: <AddToPhotosIcon /> },
+          ].map((listItem, index) => (
+            <ListItem button key={listItem.title}>
+              <ListItemIcon>{listItem.icon}</ListItemIcon>
+              <ListItemText primary={listItem.title} />
             </ListItem>
           ))}
         </List>

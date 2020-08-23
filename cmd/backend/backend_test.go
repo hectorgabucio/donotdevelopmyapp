@@ -21,7 +21,7 @@ const AUTHCOOKIE_VALUE = "jwt"
 func TestBackendNoCookie(t *testing.T) {
 	app := &app{randomClient: &mocks.RandomServiceClient{}, characterClient: &mocks.CharacterServiceClient{},
 		authClient: &mocks.AuthServiceClient{}}
-	testHandler, rr, req := prepareSUT(t, app)
+	testHandler, rr, req := prepareSUTAddCharacter(t, app)
 	testHandler.ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusUnauthorized {
@@ -34,7 +34,7 @@ func TestBackendErrorAuthCookie(t *testing.T) {
 	app := &app{randomClient: &mocks.RandomServiceClient{}, characterClient: &mocks.CharacterServiceClient{},
 		authClient: errorAuthCookieClient()}
 
-	testHandler, rr, req := prepareSUT(t, app)
+	testHandler, rr, req := prepareSUTAddCharacter(t, app)
 	req.AddCookie(&http.Cookie{Name: COOKIE_JWT_NAME, Value: AUTHCOOKIE_VALUE})
 	testHandler.ServeHTTP(rr, req)
 
@@ -44,7 +44,29 @@ func TestBackendErrorAuthCookie(t *testing.T) {
 	}
 }
 
-func TestBackend(t *testing.T) {
+func TestBackendGetCharacters(t *testing.T) {
+	tests := []struct {
+		userRepository *mocks.UserRepository
+		statusCode     int
+	}{
+		{mockRepositoryGetCharactersKO(), 500},
+		{mockRepositoryGetCharactersEmpty(), 200},
+		{mockRepositoryGetCharactersOK(), 200},
+	}
+
+	assert := assert.New(t)
+	for _, tt := range tests {
+		app := &app{userRepository: tt.userRepository, authClient: validCookieClient()}
+		testHandler, rr, req := prepareSUTGetCharacters(t, app)
+		req.AddCookie(&http.Cookie{Name: COOKIE_JWT_NAME, Value: AUTHCOOKIE_VALUE})
+		testHandler.ServeHTTP(rr, req)
+
+		assert.Equal(tt.statusCode, rr.Code, "handler returned wrong status code: got %v want %v",
+			rr.Code, tt.statusCode)
+	}
+}
+
+func TestBackendAddCharacter(t *testing.T) {
 
 	tests := []struct {
 		randomClient    *mocks.RandomServiceClient
@@ -52,11 +74,11 @@ func TestBackend(t *testing.T) {
 		userRepository  *mocks.UserRepository
 		statusCode      int
 	}{
-		{errorRandomClient(), nil, mockRepository(), 500},
-		{validRandomClient(), errorCharacterClient(), mockRepository(), 500},
-		{validRandomClient(), noCharacterClient(), mockRepository(), 404},
+		{errorRandomClient(), nil, mockRepositoryAddCharacter(), 500},
+		{validRandomClient(), errorCharacterClient(), mockRepositoryAddCharacter(), 500},
+		{validRandomClient(), noCharacterClient(), mockRepositoryAddCharacter(), 404},
 		{validRandomClient(), validCharacterClient(), mockRepositoryError(), 500},
-		{validRandomClient(), validCharacterClient(), mockRepository(), 200},
+		{validRandomClient(), validCharacterClient(), mockRepositoryAddCharacter(), 200},
 	}
 
 	assert := assert.New(t)
@@ -64,7 +86,7 @@ func TestBackend(t *testing.T) {
 
 		app := &app{randomClient: tt.randomClient, characterClient: tt.characterClient,
 			authClient: validCookieClient(), userRepository: tt.userRepository}
-		testHandler, rr, req := prepareSUT(t, app)
+		testHandler, rr, req := prepareSUTAddCharacter(t, app)
 		req.AddCookie(&http.Cookie{Name: COOKIE_JWT_NAME, Value: AUTHCOOKIE_VALUE})
 		testHandler.ServeHTTP(rr, req)
 
@@ -74,7 +96,7 @@ func TestBackend(t *testing.T) {
 
 }
 
-func prepareSUT(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorder, *http.Request) {
+func prepareSUTAddCharacter(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorder, *http.Request) {
 	handler := http.HandlerFunc(app.AddNewCharacterForUser)
 	testHandler := corsMiddleware(app.securedMiddleware((logMiddleware(handler))))
 
@@ -89,15 +111,51 @@ func prepareSUT(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorde
 
 }
 
+func prepareSUTGetCharacters(t *testing.T, app *app) (http.Handler, *httptest.ResponseRecorder, *http.Request) {
+	handler := http.HandlerFunc(app.GetCharactersOfUser)
+	testHandler := corsMiddleware(app.securedMiddleware((logMiddleware(handler))))
+
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest("GET", "/characters/me", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return testHandler, rr, req
+
+}
+
 func mockRepositoryError() *mocks.UserRepository {
 	userRepository := &mocks.UserRepository{}
-	userRepository.On("AddCharacterToUser", &data.Character{ID: "10", Name: "name", Image: ""}, "").Return(errors.New("error repo"))
+	userRepository.On("AddCharacterToUser", &data.Character{ID: "10", Name: "name", Image: ""}, "10").Return(errors.New("error repo"))
 	return userRepository
 }
 
-func mockRepository() *mocks.UserRepository {
+func mockRepositoryAddCharacter() *mocks.UserRepository {
 	userRepository := &mocks.UserRepository{}
-	userRepository.On("AddCharacterToUser", &data.Character{ID: "10", Name: "name", Image: ""}, "").Return(nil)
+	userRepository.On("AddCharacterToUser", &data.Character{ID: "10", Name: "name", Image: ""}, "10").Return(nil)
+	return userRepository
+}
+
+func mockRepositoryGetCharactersKO() *mocks.UserRepository {
+	userRepository := &mocks.UserRepository{}
+	userRepository.On("GetCharactersByUserId", "10").Return(nil, errors.New("error"))
+	return userRepository
+}
+
+func mockRepositoryGetCharactersEmpty() *mocks.UserRepository {
+	userRepository := &mocks.UserRepository{}
+	userRepository.On("GetCharactersByUserId", "10").Return([]data.UserCharacter{}, nil)
+	return userRepository
+}
+
+func mockRepositoryGetCharactersOK() *mocks.UserRepository {
+	userRepository := &mocks.UserRepository{}
+	userRepository.On("GetCharactersByUserId", "10").Return([]data.UserCharacter{
+		{Count: 1, Character: data.Character{ID: "1", Image: "image", Name: "name"}},
+		{Count: 2, Character: data.Character{ID: "2", Image: "image", Name: "name"}},
+	}, nil)
 	return userRepository
 }
 
@@ -109,7 +167,7 @@ func errorAuthCookieClient() *mocks.AuthServiceClient {
 
 func validCookieClient() *mocks.AuthServiceClient {
 	authMockClient := &mocks.AuthServiceClient{}
-	authMockClient.On("GetUser", mock.Anything, &auth.Token{Value: AUTHCOOKIE_VALUE}).Return(&auth.User{}, nil)
+	authMockClient.On("GetUser", mock.Anything, &auth.Token{Value: AUTHCOOKIE_VALUE}).Return(&auth.User{Id: "10"}, nil)
 	return authMockClient
 }
 

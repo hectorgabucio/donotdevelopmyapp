@@ -21,6 +21,7 @@ type UserRepository interface {
 	CloseConn()
 	GetOrCreate(userResult *User, userWhere *User) error
 	AddCharacterToUser(character *Character, userId string) error
+	GetCharactersByUserId(userId string) ([]UserCharacter, error)
 }
 
 type UserRepositoryImpl struct {
@@ -33,6 +34,12 @@ func (u *UserRepositoryImpl) CloseConn() {
 
 func (u *UserRepositoryImpl) GetOrCreate(userResult *User, userWhere *User) error {
 	return u.DB.FirstOrCreate(userResult, userWhere).Error
+}
+
+func (u *UserRepositoryImpl) GetCharactersByUserId(userId string) ([]UserCharacter, error) {
+	var characters []UserCharacter
+	err := u.DB.Set("gorm:auto_preload", true).Find(&characters, &UserCharacter{UserId: userId}).Error
+	return characters, err
 }
 
 func (u *UserRepositoryImpl) AddCharacterToUser(character *Character, userId string) error {
@@ -98,7 +105,7 @@ type UserCharacter struct {
 	UserId      string `gorm:"primary_key"`
 	CharacterId string `gorm:"primary_key"`
 	Count       int
-	User        User      `gorm:"foreignkey:UserId"`
+	User        User      `gorm:"foreignkey:UserId,PRELOAD:false"`
 	Character   Character `gorm:"foreignkey:CharacterId"`
 }
 

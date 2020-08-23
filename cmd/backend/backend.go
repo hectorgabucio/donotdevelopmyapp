@@ -34,6 +34,11 @@ type characterJson struct {
 	Image string `json:"image"`
 }
 
+type characterWithCount struct {
+	Character characterJson `json:"character"`
+	Count     int           `json:"count"`
+}
+
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", os.Getenv("FRONT_URL"))
@@ -73,7 +78,23 @@ func (app *app) securedMiddleware(next http.Handler) http.Handler {
 }
 
 func (app *app) GetCharactersOfUser(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	currentUser := r.Header.Get(HEADER_USER)
+
+	characters, err := app.userRepository.GetCharactersByUserId(currentUser)
+	if err != nil {
+		log.Println("Error trying to get all characters of user", currentUser)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	charactersJson := mapCollection(characters)
+
+	respondJson(charactersJson, w)
 }
 
 func (app *app) AddNewCharacterForUser(w http.ResponseWriter, r *http.Request) {
@@ -113,13 +134,29 @@ func (app *app) AddNewCharacterForUser(w http.ResponseWriter, r *http.Request) {
 
 	mappedResponse := &characterJson{Id: strconv.FormatInt(int64(character.Id), 10), Name: character.Name, Image: character.Image}
 
-	encoded, err := json.Marshal(mappedResponse)
+	respondJson(mappedResponse, w)
+}
+
+func respondJson(body interface{}, w http.ResponseWriter) {
+	encoded, err := json.Marshal(body)
 	if err != nil {
-		log.Fatalf("Error encoding to json character %s", err)
+		log.Fatalf("Error encoding to json %s", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, string(encoded))
+}
+
+func mapCollection(charactersModel []data.UserCharacter) []characterWithCount {
+	var characters []characterWithCount
+	for _, model := range charactersModel {
+		characters = append(characters, characterWithCount{Count: model.Count, Character: mapCharacter(model.Character)})
+	}
+	return characters
+}
+
+func mapCharacter(characterModel data.Character) characterJson {
+	return characterJson{Id: characterModel.ID, Image: characterModel.Image, Name: characterModel.Name}
 }
 
 func main() {

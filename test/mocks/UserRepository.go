@@ -31,6 +31,29 @@ func (_m *UserRepository) CloseConn() {
 	_m.Called()
 }
 
+// GetCharactersByUserId provides a mock function with given fields: userId
+func (_m *UserRepository) GetCharactersByUserId(userId string) ([]data.UserCharacter, error) {
+	ret := _m.Called(userId)
+
+	var r0 []data.UserCharacter
+	if rf, ok := ret.Get(0).(func(string) []data.UserCharacter); ok {
+		r0 = rf(userId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]data.UserCharacter)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(userId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOrCreate provides a mock function with given fields: userResult, userWhere
 func (_m *UserRepository) GetOrCreate(userResult *data.User, userWhere *data.User) error {
 	ret := _m.Called(userResult, userWhere)

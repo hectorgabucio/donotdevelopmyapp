@@ -10,37 +10,48 @@ import CardContent from '@material-ui/core/CardContent';
 import CardMedia from '@material-ui/core/CardMedia';
 import Typography from '@material-ui/core/Typography';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import { FormHelperText } from '@material-ui/core';
 
 const useStyles = makeStyles({
   root: {
-    maxWidth: 345,
+    width: 345,
+    height: 450,
+    margin: 5,
   },
   notFoundRoot: {
-    minWidth: 345,
+    width: 345,
+    height: 450,
+    margin: 5,
+  },
+  cardsContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
   },
 });
 
 export const Dashboard = () => {
   const classes = useStyles();
-  const [character, setCharacter] = useState(null);
+  const [characters, setCharacters] = useState(null);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    async function getCharacter() {
+    async function getCharacters() {
       try {
-        const character = await getRandomCharacter();
-        setCharacter(character);
+        const characters = await getMyCharacters();
+        setCharacters(characters);
       } finally {
         setLoaded(true);
       }
     }
-    getCharacter();
+    getCharacters();
   }, []);
 
   if (!loaded) {
     return <CircularProgress color="secondary" />;
   }
 
-  if (!character) {
+  if (!characters) {
     return (
       <Card className={classes.notFoundRoot}>
         <CardContent>
@@ -51,35 +62,48 @@ export const Dashboard = () => {
       </Card>
     );
   } else {
+    console.log(characters);
+
     return (
-      <Card className={classes.root}>
-        <CardActionArea>
-          <CardMedia
-            component="img"
-            alt="Ricky and Morty image"
-            image={character.image}
-            title={character.name}
-          />
-          <CardContent>
-            <Typography gutterBottom variant="h5" component="h2">
-              {character.name}
-            </Typography>
-          </CardContent>
-        </CardActionArea>
-        <CardActions>
-          <Button size="small" color="primary">
-            Share
-          </Button>
-          <Button size="small" color="primary">
-            Learn More
-          </Button>
-        </CardActions>
-      </Card>
+      <div className={classes.cardsContainer}>
+        {characters.map((character) => {
+          return (
+            <Card key={character.toString()} className={classes.root}>
+              <CardActionArea>
+                <CardMedia
+                  component="img"
+                  alt="Ricky and Morty image"
+                  image={character.character.image}
+                  title={character.character.name}
+                />
+                <CardContent>
+                  <Typography gutterBottom variant="h5" component="h2">
+                    {character.character.name}
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+              <CardActions>
+                <Button size="small" color="primary">
+                  Share
+                </Button>
+                <Button size="small" color="primary">
+                  Learn More
+                </Button>
+              </CardActions>
+            </Card>
+          );
+        })}
+      </div>
     );
   }
 };
 
-async function getRandomCharacter() {
+async function addNewCharacter() {
   const resp = await axios.post('/characters');
+  return resp.status === 200 ? resp.data : null;
+}
+
+async function getMyCharacters() {
+  const resp = await axios.get('/characters/me');
   return resp.status === 200 ? resp.data : null;
 }

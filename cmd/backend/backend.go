@@ -81,7 +81,7 @@ func (app *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	numberStr := strconv.FormatUint(message.Number, 10)
-	character, err := app.characterClient.GetCharacter(context.Background(), &character.Input{Number: numberStr})
+	character, err := app.characterClient.GetCharacter(context.Background(), &character.Id{Number: numberStr})
 	if err != nil {
 		log.Printf("Error while getting random character %s", err)
 		w.WriteHeader(500)

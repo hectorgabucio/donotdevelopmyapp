@@ -36,12 +36,12 @@ func (api *ApiClient) Get(path string) (*http.Response, error) {
 	return api.client.Get(path)
 }
 
-func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*character.Output, error) {
+func (a *App) GetCharacter(ctx context.Context, input *character.Id) (*character.CharacterResponse, error) {
 	log.Printf("received call for input %s", input.Number)
 
 	if x, found := a.Cache.Get(input.Number); found {
 		log.Println("Getting from cache...")
-		return x.(*character.Output), nil
+		return x.(*character.CharacterResponse), nil
 	}
 
 	path := fmt.Sprintf("%s%s", a.Api.GetBaseUrl(), input.Number)
@@ -51,7 +51,7 @@ func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*charac
 		return nil, err
 	}
 	defer resp.Body.Close()
-	character := &character.Output{}
+	character := &character.CharacterResponse{}
 
 	err = json.NewDecoder(resp.Body).Decode(character)
 	if err != nil {
@@ -64,6 +64,10 @@ func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*charac
 	}
 
 	return character, nil
+}
+
+func (a *App) GetAllCharactersOfUser(ctx context.Context, in *character.Id) (*character.CharactersResponse, error) {
+	return nil, nil
 }
 
 func main() {

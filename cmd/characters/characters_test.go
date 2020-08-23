@@ -22,11 +22,11 @@ func TestGetCharacter(t *testing.T) {
 	tests := []struct {
 		numberInput  string
 		errorMessage string
-		character    *character.Output
+		character    *character.CharacterResponse
 	}{
 		{"10", "rpc error: code = Unknown desc = error10", nil},
 		{"11", "rpc error: code = Unknown desc = invalid character 'm' looking for beginning of value", nil},
-		{"12", "", &character.Output{Id: 1, Name: "Ricky", Image: "image"}},
+		{"12", "", &character.CharacterResponse{Id: 1, Name: "Ricky", Image: "image"}},
 	}
 	init := make(chan bool)
 	s := grpctest.InitServer(init)
@@ -58,7 +58,7 @@ func TestGetCharacter(t *testing.T) {
 		t.Run(testname, func(t *testing.T) {
 			ctx := context.Background()
 			client := character.NewCharacterServiceClient(conn)
-			resp, err := client.GetCharacter(ctx, &character.Input{Number: tt.numberInput})
+			resp, err := client.GetCharacter(ctx, &character.Id{Number: tt.numberInput})
 			if err != nil {
 				assert.Equal(tt.errorMessage, err.Error(), "It should be equal")
 			} else {
@@ -93,13 +93,13 @@ func TestGetCharacterCached(t *testing.T) {
 
 	ctx := context.Background()
 	client := character.NewCharacterServiceClient(conn)
-	resp, _ := client.GetCharacter(ctx, &character.Input{Number: "1"})
+	resp, _ := client.GetCharacter(ctx, &character.Id{Number: "1"})
 
 	assert.Equal(int32(1), resp.Id, "should be equal")
 	apiClient.AssertNumberOfCalls(t, "Get", 1)
 
 	// this time is cached, should not do http call
-	resp, _ = client.GetCharacter(ctx, &character.Input{Number: "1"})
+	resp, _ = client.GetCharacter(ctx, &character.Id{Number: "1"})
 	assert.Equal(int32(1), resp.Id, "should be equal")
 	apiClient.AssertNumberOfCalls(t, "Get", 1)
 }

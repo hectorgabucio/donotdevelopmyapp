@@ -2,16 +2,27 @@ syntax = "proto3";
 
 package character;
 
-message Input {
+message Id {
   string number = 1;
 }
 
-message Output {
+message CharacterResponse {
   int32 id = 1;
   string name = 2;
   string image = 3;
 }
 
+message CharacterCount {
+  int32 count = 1;
+  CharacterResponse character = 2;
+}
+
+message CharactersResponse {
+  repeated CharacterCount characters = 1;
+}
+
+
 service CharacterService {
-  rpc GetCharacter(Input) returns (Output) {}
+  rpc GetCharacter(Id) returns (CharacterResponse) {}
+  rpc GetAllCharactersOfUser(Id) returns (CharactersResponse) {}
 }

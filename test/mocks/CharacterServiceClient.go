@@ -17,38 +17,8 @@ type CharacterServiceClient struct {
 	mock.Mock
 }
 
-// GetAllCharactersOfUser provides a mock function with given fields: ctx, in, opts
-func (_m *CharacterServiceClient) GetAllCharactersOfUser(ctx context.Context, in *character.Id, opts ...grpc.CallOption) (*character.CharactersResponse, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	var r0 *character.CharactersResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *character.Id, ...grpc.CallOption) *character.CharactersResponse); ok {
-		r0 = rf(ctx, in, opts...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*character.CharactersResponse)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *character.Id, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetCharacter provides a mock function with given fields: ctx, in, opts
-func (_m *CharacterServiceClient) GetCharacter(ctx context.Context, in *character.Id, opts ...grpc.CallOption) (*character.CharacterResponse, error) {
+func (_m *CharacterServiceClient) GetCharacter(ctx context.Context, in *character.Input, opts ...grpc.CallOption) (*character.Output, error) {
 	_va := make([]interface{}, len(opts))
 	for _i := range opts {
 		_va[_i] = opts[_i]
@@ -58,17 +28,17 @@ func (_m *CharacterServiceClient) GetCharacter(ctx context.Context, in *characte
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *character.CharacterResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *character.Id, ...grpc.CallOption) *character.CharacterResponse); ok {
+	var r0 *character.Output
+	if rf, ok := ret.Get(0).(func(context.Context, *character.Input, ...grpc.CallOption) *character.Output); ok {
 		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*character.CharacterResponse)
+			r0 = ret.Get(0).(*character.Output)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *character.Id, ...grpc.CallOption) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *character.Input, ...grpc.CallOption) error); ok {
 		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)

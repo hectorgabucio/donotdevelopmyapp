@@ -127,18 +127,18 @@ func validRandomClient() *mocks.RandomServiceClient {
 
 func errorCharacterClient() *mocks.CharacterServiceClient {
 	characterClient := &mocks.CharacterServiceClient{}
-	characterClient.On("GetCharacter", mock.Anything, &character.Id{Number: "10"}).Return(nil, fmt.Errorf("error"))
+	characterClient.On("GetCharacter", mock.Anything, &character.Input{Number: "10"}).Return(nil, fmt.Errorf("error"))
 	return characterClient
 }
 
 func noCharacterClient() *mocks.CharacterServiceClient {
 	characterClient := &mocks.CharacterServiceClient{}
-	characterClient.On("GetCharacter", mock.Anything, &character.Id{Number: "10"}).Return(&character.CharacterResponse{}, nil)
+	characterClient.On("GetCharacter", mock.Anything, &character.Input{Number: "10"}).Return(&character.Output{}, nil)
 	return characterClient
 }
 
 func validCharacterClient() *mocks.CharacterServiceClient {
 	characterClient := &mocks.CharacterServiceClient{}
-	characterClient.On("GetCharacter", mock.Anything, &character.Id{Number: "10"}).Return(&character.CharacterResponse{Id: 10, Name: "name"}, nil)
+	characterClient.On("GetCharacter", mock.Anything, &character.Input{Number: "10"}).Return(&character.Output{Id: 10, Name: "name"}, nil)
 	return characterClient
 }

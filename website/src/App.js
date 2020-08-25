@@ -19,6 +19,7 @@ import CollectionsIcon from '@material-ui/icons/Collections';
 import AddToPhotosIcon from '@material-ui/icons/AddToPhotos';
 import { Dashboard } from './Dashboard';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+import { AddNewCard } from './AddNewCard';
 
 const drawerWidth = 240;
 
@@ -75,7 +76,6 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'flex-end',
     padding: theme.spacing(0, 1),
-    // necessary for content to be below app bar
     ...theme.mixins.toolbar,
   },
   content: {
@@ -170,10 +170,9 @@ export default function App() {
         </Drawer>
         <main className={classes.content}>
           <div className={classes.toolbar} />
-
           <Switch>
             <Route path="/new-card">
-              <div>HOLA</div>
+              <AddNewCard></AddNewCard>
             </Route>
             <Route path="/">
               <Dashboard></Dashboard>

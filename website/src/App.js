@@ -17,14 +17,8 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import CollectionsIcon from '@material-ui/icons/Collections';
 import AddToPhotosIcon from '@material-ui/icons/AddToPhotos';
-import MailIcon from '@material-ui/icons/Mail';
 import { Dashboard } from './Dashboard';
-import Mail from '@material-ui/icons/Mail';
-/*
-export default function App() {
-  return <Dashboard></Dashboard>;
-}
-*/
+import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 
 const drawerWidth = 240;
 
@@ -104,70 +98,89 @@ export default function App() {
   };
 
   return (
-    <div className={classes.root}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        className={clsx(classes.appBar, {
-          [classes.appBarShift]: open,
-        })}
-      >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            className={clsx(classes.menuButton, {
-              [classes.hide]: open,
-            })}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap>
-            Do NOT develop my app
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="permanent"
-        className={clsx(classes.drawer, {
-          [classes.drawerOpen]: open,
-          [classes.drawerClose]: !open,
-        })}
-        classes={{
-          paper: clsx({
+    <Router>
+      <div className={classes.root}>
+        <CssBaseline />
+        <AppBar
+          position="fixed"
+          className={clsx(classes.appBar, {
+            [classes.appBarShift]: open,
+          })}
+        >
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={handleDrawerOpen}
+              edge="start"
+              className={clsx(classes.menuButton, {
+                [classes.hide]: open,
+              })}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap>
+              Do NOT develop my app
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <Drawer
+          variant="permanent"
+          className={clsx(classes.drawer, {
             [classes.drawerOpen]: open,
             [classes.drawerClose]: !open,
-          }),
-        }}
-      >
-        <div className={classes.toolbar}>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === 'rtl' ? (
-              <ChevronRightIcon />
-            ) : (
-              <ChevronLeftIcon />
-            )}
-          </IconButton>
-        </div>
-        <Divider />
-        <List>
-          {[
-            { title: 'My collection', icon: <CollectionsIcon /> },
-            { title: 'Get a new card', icon: <AddToPhotosIcon /> },
-          ].map((listItem, index) => (
-            <ListItem button key={listItem.title}>
-              <ListItemIcon>{listItem.icon}</ListItemIcon>
-              <ListItemText primary={listItem.title} />
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
-      <main className={classes.content}>
-        <div className={classes.toolbar} />
-        <Dashboard></Dashboard>
-      </main>
-    </div>
+          })}
+          classes={{
+            paper: clsx({
+              [classes.drawerOpen]: open,
+              [classes.drawerClose]: !open,
+            }),
+          }}
+        >
+          <div className={classes.toolbar}>
+            <IconButton onClick={handleDrawerClose}>
+              {theme.direction === 'rtl' ? (
+                <ChevronRightIcon />
+              ) : (
+                <ChevronLeftIcon />
+              )}
+            </IconButton>
+          </div>
+          <Divider />
+          <List>
+            {[
+              { title: 'My collection', icon: <CollectionsIcon />, href: '/' },
+              {
+                title: 'Get a new card',
+                icon: <AddToPhotosIcon />,
+                href: '/new-card',
+              },
+            ].map((listItem, index) => (
+              <ListItem
+                button
+                key={listItem.title}
+                component={Link}
+                to={listItem.href}
+              >
+                <ListItemIcon>{listItem.icon}</ListItemIcon>
+                <ListItemText primary={listItem.title} />
+              </ListItem>
+            ))}
+          </List>
+        </Drawer>
+        <main className={classes.content}>
+          <div className={classes.toolbar} />
+
+          <Switch>
+            <Route path="/new-card">
+              <div>HOLA</div>
+            </Route>
+            <Route path="/">
+              <Dashboard></Dashboard>
+            </Route>
+          </Switch>
+        </main>
+      </div>
+    </Router>
   );
 }

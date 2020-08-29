@@ -4,9 +4,9 @@ tls/ca.cert
 tls/ca.key
 tls/ca.srl
 tls/service.csr
-tls/service.key
-tls/service.key
-tls/service.pem
+tls/tls.key
+tls/tls.key
+tls/tls.crt
 coverage.html
 coverage.txt
 .vscode

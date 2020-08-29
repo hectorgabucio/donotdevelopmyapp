@@ -5,13 +5,13 @@ all: check-style test
 ## Create certificates to encrypt the gRPC connection.
 .PHONY: cert
 cert: 
-	rm -rf tls/ca.cert tls/ca.key tls/ca.srl tls/service.csr tls/service.key tls/service.key tls/service.pem
+	rm -rf tls/ca.cert tls/ca.key tls/ca.srl tls/service.csr tls/tls.key tls/tls.key tls/tls.crt
 	openssl genrsa -out ./tls/ca.key 4096
 	openssl req -new -x509 -key ./tls/ca.key -sha256 -subj "/C=US/ST=NJ/O=CA, Inc." -days 365 -out ./tls/ca.cert
-	openssl genrsa -out ./tls/service.key 4096
-	openssl req -new -key ./tls/service.key -out ./tls/service.csr -config ./tls/certificate.conf
+	openssl genrsa -out ./tls/tls.key 4096
+	openssl req -new -key ./tls/tls.key -out ./tls/service.csr -config ./tls/certificate.conf
 	openssl x509 -req -in ./tls/service.csr -CA ./tls/ca.cert -CAkey ./tls/ca.key -CAcreateserial \
-		-out ./tls/service.pem -days 365 -sha256 -extfile ./tls/certificate.conf -extensions req_ext
+		-out ./tls/tls.crt -days 365 -sha256 -extfile ./tls/certificate.conf -extensions req_ext
 
 ## Runs golangci-lint and npm run lint.
 .PHONY: check-style

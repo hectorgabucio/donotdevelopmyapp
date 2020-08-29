@@ -13,8 +13,8 @@ import (
 const HTTP_PORT = 8080
 const GRPC_PORT = 8081
 
-const TLS_PEM_PATH = "./tls/service.pem"
-const TLS_KEY_PATH = "./tls/service.key"
+const TLS_PEM_PATH = "./tls/tls.crt"
+const TLS_KEY_PATH = "./tls/tls.key"
 
 func ServeGRPC(server *grpc.Server) error {
 	lis, err := net.Listen("tcp", port(GRPC_PORT))

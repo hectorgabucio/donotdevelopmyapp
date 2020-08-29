@@ -39,3 +39,10 @@ spec:
             cpu: 100m
           limits:
             cpu: 100m
+        volumeMounts:
+        - mountPath: "/tls"
+          name: task-pv-storage
+      volumes:
+        - name: task-pv-storage
+          persistentVolumeClaim:
+            claimName: task-pv-claim

@@ -38,7 +38,7 @@ jobs:
     - name: Build
       run: |-
         docker build \
-          -f ./build/Dockerfile
+          -f ./build/Dockerfile \
           --tag "gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA" \
           --build-arg project=./cmd/characters/ \
           .

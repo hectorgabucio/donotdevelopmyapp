@@ -47,8 +47,3 @@ spec:
         - name: secret
           secret:
             secretName: test-tls
-            items:
-              - key: tls.crt
-                path: tls/
-              - key: tls.key
-                path: tls/

@@ -1,7 +1,7 @@
 on: [push, pull_request]
 name: React test
 jobs:
-  build:
+  frontTest:
     runs-on: ubuntu-latest
     strategy:
       matrix:

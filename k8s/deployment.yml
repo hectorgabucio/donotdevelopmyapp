@@ -41,8 +41,9 @@ spec:
             cpu: 100m
         volumeMounts:
         - mountPath: "/tls"
-          name: task-pv-storage
+          name: secret
+          readOnly: true
       volumes:
-        - name: task-pv-storage
-          persistentVolumeClaim:
-            claimName: task-pv-claim
+        - name: secret
+          secret:
+            secretName: test-tls

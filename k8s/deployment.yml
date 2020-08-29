@@ -47,3 +47,8 @@ spec:
         - name: secret
           secret:
             secretName: test-tls
+            items:
+              - key: service.pem
+                path: tls/
+              - key: service.key
+                path: tls/

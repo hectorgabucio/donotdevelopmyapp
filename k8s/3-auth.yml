@@ -29,6 +29,11 @@ spec:
       containers:
       - name: auth-micro
         image: gcr.io/PROJECT_ID/AUTH:TAG
+        env:
+        - name: DB_SERVICE_HOST
+          value: "my-release-cockroachdb-public.default.svc.cluster.local"
+        - name: DB_SERVICE_PORT
+          value: "26257"
         ports:
         - containerPort: 5000
         resources:

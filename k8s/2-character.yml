@@ -30,7 +30,7 @@ spec:
       - name: character-micro
         image: gcr.io/PROJECT_ID/CHARACTER:TAG
         ports:
-        - containerPort: 5000
+        - containerPort: 8081
         resources:
           requests:
             cpu: 100m

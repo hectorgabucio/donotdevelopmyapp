@@ -114,7 +114,7 @@ func initConnection() *gorm.DB {
 		addr := fmt.Sprintf("postgresql://root@%s:%s/postgres?sslmode=disable", os.Getenv("DB_SERVICE_HOST"), os.Getenv("DB_SERVICE_PORT"))
 		db, err := gorm.Open("postgres", addr)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln("Error trying to connect to addr:", addr, "err was:", err)
 		}
 		db.LogMode(true)
 		db.AutoMigrate(&Character{})

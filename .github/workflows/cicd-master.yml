@@ -8,8 +8,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   GKE_CLUSTER: cluster-1    
-  GKE_ZONE: europe-west1-b  
-  IMAGE: character
+  GKE_ZONE: europe-west1-b
   DEPLOYMENT_NAME: gke-test # TODO: update to deployment name
 
 jobs:
@@ -76,15 +75,15 @@ jobs:
     - run: |-
         gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
     # Build the Docker image
-    - name: Build
+    - name: Build and tag images
       run: |-
         chmod u+x ./deployments/buildAndTag.sh
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/character:$GITHUB_SHA" ./cmd/characters/
     # Push the Docker image to Google Container Registry
-    - name: Publish
+    - name: Publish to GCR
       run: |-
-        docker push "gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA"
-
+        chmod u+x ./deployments/pushToRegistry.sh
+        ./pushToRegistry.sh "gcr.io/$PROJECT_ID/character:$GITHUB_SHA"
     # Set up kustomize
     - name: Set up Kustomize
       run: |-
@@ -96,7 +95,7 @@ jobs:
     - name: Deploy
       run: |-
         cd ./k8s
-        ./kustomize edit set image gcr.io/PROJECT_ID/IMAGE:TAG=gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA
+        ./kustomize edit set image gcr.io/PROJECT_ID/CHARACTER:TAG=gcr.io/$PROJECT_ID/character:$GITHUB_SHA
         ./kustomize build . | kubectl apply -f -
         kubectl rollout status deployment/$DEPLOYMENT_NAME
         kubectl get services -o wide

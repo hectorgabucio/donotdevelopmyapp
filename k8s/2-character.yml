@@ -1,7 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: character-service
+spec:
+  selector:
+    app: character-micro
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: gke-test
+  name: character-micro
 spec:
   replicas: 1
   strategy:
@@ -12,10 +24,10 @@ spec:
   template:
     metadata:
       labels:
-        app: gke-test
+        app: character-micro
     spec:
       containers:
-      - name: gke-test
+      - name: character-micro
         image: gcr.io/PROJECT_ID/CHARACTER:TAG
         ports:
         - containerPort: 5000

@@ -92,6 +92,6 @@ jobs:
         ./kustomize edit set image gcr.io/PROJECT_ID/CHARACTER:TAG=gcr.io/$PROJECT_ID/character:$GITHUB_SHA
         ./kustomize edit set image gcr.io/PROJECT_ID/RANDOM:TAG=gcr.io/$PROJECT_ID/random:$GITHUB_SHA
         ./kustomize build . | kubectl apply -f -
-        kubectl rollout status deployment/gke-test
+        kubectl rollout status deployment/character-micro
         kubectl rollout status deployment/random-micro
         kubectl get services -o wide

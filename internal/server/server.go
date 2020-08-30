@@ -29,6 +29,7 @@ func ServeHTTP(mux *http.ServeMux) error {
 }
 
 func EstablishGRPCConn(addr string) (*grpc.ClientConn, error) {
+	log.Println("Connecting to grpc addr:", addr)
 	return grpc.Dial(addr, grpcClientCredentials())
 
 }

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: random-service
+  name: random-micro
 spec:
   selector:
     app: random-micro

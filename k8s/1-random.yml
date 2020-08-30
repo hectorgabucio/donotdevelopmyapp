@@ -1,7 +1,7 @@
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: gke-test
+  name: random-micro
 spec:
   replicas: 1
   strategy:
@@ -12,11 +12,11 @@ spec:
   template:
     metadata:
       labels:
-        app: gke-test
+        app: random-micro
     spec:
       containers:
-      - name: gke-test
-        image: gcr.io/PROJECT_ID/CHARACTER:TAG
+      - name: random-micro
+        image: gcr.io/PROJECT_ID/RANDOM:TAG
         ports:
         - containerPort: 5000
         resources:

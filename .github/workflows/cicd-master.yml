@@ -9,7 +9,6 @@ env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   GKE_CLUSTER: cluster-1    
   GKE_ZONE: europe-west1-b
-  DEPLOYMENT_NAME: gke-test # TODO: update to deployment name
 
 jobs:
   golangci:
@@ -72,11 +71,13 @@ jobs:
       run: |-
         chmod u+x ./deployments/buildAndTag.sh
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/character:$GITHUB_SHA" ./cmd/characters/
+        ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/random:$GITHUB_SHA" ./cmd/random-micro/
     # Push the Docker image to Google Container Registry
     - name: Publish to GCR
       run: |-
         chmod u+x ./deployments/pushToRegistry.sh
         ./deployments/pushToRegistry.sh "gcr.io/$PROJECT_ID/character:$GITHUB_SHA"
+        ./deployments/pushToRegistry.sh "gcr.io/$PROJECT_ID/random:$GITHUB_SHA"
     # Set up kustomize
     - name: Set up Kustomize
       run: |-
@@ -89,6 +90,8 @@ jobs:
       run: |-
         cd ./k8s
         ./kustomize edit set image gcr.io/PROJECT_ID/CHARACTER:TAG=gcr.io/$PROJECT_ID/character:$GITHUB_SHA
+        ./kustomize edit set image gcr.io/PROJECT_ID/RANDOM:TAG=gcr.io/$PROJECT_ID/random:$GITHUB_SHA
         ./kustomize build . | kubectl apply -f -
-        kubectl rollout status deployment/$DEPLOYMENT_NAME
+        kubectl rollout status deployment/gke-test
+        kubectl rollout status deployment/random-micro
         kubectl get services -o wide

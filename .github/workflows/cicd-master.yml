@@ -78,6 +78,7 @@ jobs:
     # Build the Docker image
     - name: Build
       run: |-
+        chmod u+x ./deployments/buildAndTag.sh
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/character:$GITHUB_SHA" ./cmd/characters/
     # Push the Docker image to Google Container Registry
     - name: Publish

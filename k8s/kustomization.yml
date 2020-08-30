@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
 - 1-random.yml
 - 2-character.yml
+- 3-auth.yml

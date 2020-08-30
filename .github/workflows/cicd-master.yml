@@ -72,12 +72,14 @@ jobs:
         chmod u+x ./deployments/buildAndTag.sh
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/character:$GITHUB_SHA" ./cmd/characters/
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/random:$GITHUB_SHA" ./cmd/random-micro/
+        ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/auth:$GITHUB_SHA" ./cmd/auth/
     # Push the Docker image to Google Container Registry
     - name: Publish to GCR
       run: |-
         chmod u+x ./deployments/pushToRegistry.sh
         ./deployments/pushToRegistry.sh "gcr.io/$PROJECT_ID/character:$GITHUB_SHA"
         ./deployments/pushToRegistry.sh "gcr.io/$PROJECT_ID/random:$GITHUB_SHA"
+        ./deployments/pushToRegistry.sh "gcr.io/$PROJECT_ID/auth:$GITHUB_SHA"
     # Set up kustomize
     - name: Set up Kustomize
       run: |-
@@ -91,7 +93,9 @@ jobs:
         cd ./k8s
         ./kustomize edit set image gcr.io/PROJECT_ID/CHARACTER:TAG=gcr.io/$PROJECT_ID/character:$GITHUB_SHA
         ./kustomize edit set image gcr.io/PROJECT_ID/RANDOM:TAG=gcr.io/$PROJECT_ID/random:$GITHUB_SHA
+        ./kustomize edit set image gcr.io/PROJECT_ID/AUTH:TAG=gcr.io/$PROJECT_ID/auth:$GITHUB_SHA
         ./kustomize build . | kubectl apply -f -
         kubectl rollout status deployment/character-micro
         kubectl rollout status deployment/random-micro
+        kubectl rollout status deployment/auth-micro
         kubectl get services -o wide

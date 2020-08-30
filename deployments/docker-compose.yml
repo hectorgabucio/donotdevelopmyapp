@@ -16,6 +16,7 @@ services:
       - ../tls:/tls:ro
     depends_on:
       - auth-micro
+      - backend
 
   auth-micro:
     build:
@@ -61,6 +62,7 @@ services:
     depends_on:
       - random-micro
       - db
+      - auth-micro
 
   character-micro:
     build:

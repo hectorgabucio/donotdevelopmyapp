@@ -3,7 +3,6 @@ package data
 import (
 	"fmt"
 	"log"
-	"os"
 	"sync"
 
 	"github.com/jinzhu/gorm"
@@ -111,7 +110,7 @@ type UserCharacter struct {
 
 func initConnection() *gorm.DB {
 	once.Do(func() { // <-- atomic, does not allow repeating
-		addr := fmt.Sprintf("postgresql://root@%s:%s/postgres?sslmode=disable", os.Getenv("DB_SERVICE_HOST"), os.Getenv("DB_SERVICE_PORT"))
+		addr := fmt.Sprintf("postgresql://root@%s:%s/postgres?sslmode=disable", "my-release-cockroachdb-public.default.svc.cluster.local", "26257")
 		db, err := gorm.Open("postgres", addr)
 		if err != nil {
 			log.Fatalln("Error trying to connect to addr:", addr, "err was:", err)

@@ -161,7 +161,7 @@ func mapCharacter(characterModel data.Character) characterJson {
 
 func main() {
 
-	connRandom, err := server.EstablishGRPCConn(os.Getenv("RANDOM_MICRO_SERVICE_HOST") + ":" + os.Getenv("RANDOM_MICRO_SERVICE_PORT"))
+	connRandom, err := server.EstablishGRPCConn("random-micro.default.svc.cluster.local:8081")
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}

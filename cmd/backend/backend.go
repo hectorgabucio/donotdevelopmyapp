@@ -168,14 +168,14 @@ func main() {
 	defer connRandom.Close()
 	randomClient := random.NewRandomServiceClient(connRandom)
 
-	connCharacter, err := server.EstablishGRPCConn(os.Getenv("CHARACTER_MICRO_SERVICE_HOST") + ":" + os.Getenv("CHARACTER_MICRO_SERVICE_PORT"))
+	connCharacter, err := server.EstablishGRPCConn("character-micro.default.svc.cluster.local:8081")
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}
 	defer connCharacter.Close()
 	characterClient := character.NewCharacterServiceClient(connCharacter)
 
-	connAuth, err := server.EstablishGRPCConn(os.Getenv("AUTH_MICRO_SERVICE_HOST") + ":" + os.Getenv("AUTH_MICRO_SERVICE_PORT"))
+	connAuth, err := server.EstablishGRPCConn("auth-micro.default.svc.cluster.local:8081")
 	if err != nil {
 		log.Fatalf("Error dial grpc: %s", err)
 	}

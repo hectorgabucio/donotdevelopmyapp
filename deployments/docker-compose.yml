@@ -5,11 +5,7 @@ services:
     build:
       context: ../website
     ports:
-      - 80:80
       - 443:443
-    environment:
-      - AUTH_URL=http://auth-micro.default.svc.cluster.local:8080/login
-      - CALLBACK_URL=http://auth-micro.default.svc.cluster.local:8080/callback
     volumes:
       - ../tls:/tls:ro
     depends_on:

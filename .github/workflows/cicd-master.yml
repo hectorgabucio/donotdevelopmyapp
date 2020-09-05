@@ -74,7 +74,7 @@ jobs:
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/random:$GITHUB_SHA" ./cmd/random-micro/
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/auth:$GITHUB_SHA" ./cmd/auth/
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/backend:$GITHUB_SHA" ./cmd/backend/
-        ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/website:$GITHUB_SHA" ./cmd/website/
+        docker build -f ./website/Dockerfile --tag "gcr.io/$PROJECT_ID/website:$GITHUB_SHA"
     # Push the Docker image to Google Container Registry
     - name: Publish to GCR
       run: |-

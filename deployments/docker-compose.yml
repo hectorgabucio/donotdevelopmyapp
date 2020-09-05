@@ -4,8 +4,6 @@ services:
   website:
     build:
       context: ../website
-      args:
-        REACT_APP_BACKEND_URL: http://localhost:8080
     ports:
       - 80:80
       - 443:443
@@ -16,7 +14,7 @@ services:
       - ../tls:/tls:ro
     depends_on:
       - auth-micro.default.svc.cluster.local
-      - backend
+      - backend.default.svc.cluster.local
 
   auth-micro.default.svc.cluster.local:
     build:

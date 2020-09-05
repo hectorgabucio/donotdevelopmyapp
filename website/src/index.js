@@ -6,7 +6,7 @@ import * as serviceWorker from './serviceWorker';
 import axios from 'axios';
 import swal from 'sweetalert';
 
-axios.defaults.baseURL = process.env.REACT_APP_BACKEND_URL;
+axios.defaults.baseURL = '/api';
 axios.defaults.withCredentials = true;
 
 // Add a 401 response interceptor

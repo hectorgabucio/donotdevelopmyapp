@@ -6,9 +6,6 @@ spec:
   selector:
     app: website
   ports:
-    - name: http
-      port: 80
-      targetPort: 80
     - name: https
       port: 443
       targetPort: 443
@@ -34,7 +31,6 @@ spec:
       - name: website
         image: gcr.io/PROJECT_ID/WEBSITE:TAG
         ports:
-        - containerPort: 80
         - containerPort: 443
         resources:
           requests:

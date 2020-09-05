@@ -74,7 +74,7 @@ jobs:
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/random:$GITHUB_SHA" ./cmd/random-micro/
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/auth:$GITHUB_SHA" ./cmd/auth/
         ./deployments/buildAndTag.sh "gcr.io/$PROJECT_ID/backend:$GITHUB_SHA" ./cmd/backend/
-        docker build -f ./website/Dockerfile --tag "gcr.io/$PROJECT_ID/website:$GITHUB_SHA"
+        docker build --tag gcr.io/$PROJECT_ID/website:$GITHUB_SHA --build-arg REACT_APP_BACKEND_URL=http://backend.default.svc.cluster.local:8080 ./website
     # Push the Docker image to Google Container Registry
     - name: Publish to GCR
       run: |-

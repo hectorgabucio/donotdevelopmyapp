@@ -37,7 +37,7 @@ services:
       - my-release-cockroachdb-public.default.svc.cluster.local
 
 
-  backend:
+  backend.default.svc.cluster.local:
     build:
       context: ../
       dockerfile: ./build/Dockerfile

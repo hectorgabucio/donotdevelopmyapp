@@ -5,3 +5,4 @@ resources:
 - 2-character.yml
 - 3-auth.yml
 - 4-backend.yml
+- 5-website.yml

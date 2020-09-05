@@ -34,6 +34,17 @@ spec:
       containers:
       - name: auth-micro
         image: gcr.io/PROJECT_ID/AUTH:TAG
+        env:
+          - name: ACCESS_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: secrets
+                key: access.txt
+          - name: STATE_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: secrets
+                key: state.txt
         ports:
         - containerPort: 8081
         - containerPort: 8080

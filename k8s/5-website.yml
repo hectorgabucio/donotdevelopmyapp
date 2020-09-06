@@ -44,4 +44,4 @@ spec:
       volumes:
         - name: secret
           secret:
-            secretName: test-tls
+            secretName: tls-live

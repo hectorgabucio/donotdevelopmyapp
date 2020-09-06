@@ -46,9 +46,9 @@ spec:
                 name: google-auth
                 key: client_secret
           - name: REDIRECT_URL
-            value: "https://donot.cards/callback"
+            value: "https://www.donot.cards/callback"
           - name: FRONT_URL
-            value: "https://donot.cards"
+            value: "https://www.donot.cards"
           - name: ACCESS_SECRET
             valueFrom:
               secretKeyRef:

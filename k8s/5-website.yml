@@ -3,11 +3,12 @@ kind: Service
 metadata:
   name: website
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: website
   ports:
-    - port: 443
+    - name: https
+      port: 443
       targetPort: 443
 ---
 apiVersion: apps/v1beta1

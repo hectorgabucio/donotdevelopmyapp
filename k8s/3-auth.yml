@@ -35,6 +35,16 @@ spec:
       - name: auth-micro
         image: gcr.io/PROJECT_ID/AUTH:TAG
         env:
+          - name: GOOGLE_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: google-auth
+                key: client_id
+          - name: GOOGLE_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: google-auth
+                key: client_secret
           - name: REDIRECT_URL
             value: "https://donot.cards/callback"
           - name: FRONT_URL

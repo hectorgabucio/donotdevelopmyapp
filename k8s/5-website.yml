@@ -9,6 +9,7 @@ spec:
     - protocol: TCP
       port: 443
       targetPort: 443
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:

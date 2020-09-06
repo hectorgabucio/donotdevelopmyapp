@@ -6,11 +6,9 @@ spec:
   selector:
     app: website
   ports:
-    - name: https
+    - protocol: TCP
       port: 443
       targetPort: 443
-  type: LoadBalancer
----
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:

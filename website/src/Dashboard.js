@@ -56,14 +56,12 @@ export const Dashboard = () => {
       <Card className={classes.notFoundRoot}>
         <CardContent>
           <Typography variant="h5" component="h2">
-            Unlucky! no character found, try again refreshing.
+            :( You dont have any cards! Pick new cards in the left menu.
           </Typography>
         </CardContent>
       </Card>
     );
   } else {
-    console.log(characters);
-
     return (
       <div className={classes.cardsContainer}>
         {characters.map((character) => {

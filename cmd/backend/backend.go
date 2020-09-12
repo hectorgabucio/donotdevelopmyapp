@@ -186,8 +186,7 @@ func main() {
 	handlerAddNewCharacter := http.HandlerFunc(app.AddNewCharacterForUser)
 	handlerGetCharactersOfUser := http.HandlerFunc(app.GetCharactersOfUser)
 
-	mux := http.NewServeMux()
-	mux.Handle("/characters", corsMiddleware(app.securedMiddleware((logMiddleware(handlerAddNewCharacter)))))
-	mux.Handle("/characters/me", corsMiddleware(app.securedMiddleware((logMiddleware(handlerGetCharactersOfUser)))))
-	log.Fatal(server.ServeHTTP(mux))
+	http.Handle("/characters", corsMiddleware(app.securedMiddleware((logMiddleware(handlerAddNewCharacter)))))
+	http.Handle("/characters/me", corsMiddleware(app.securedMiddleware((logMiddleware(handlerGetCharactersOfUser)))))
+	log.Fatal(server.ServeHTTPS())
 }

@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const HTTP_PORT = 8080
+const HTTPS_PORT = 8080
 const GRPC_PORT = 8081
 
 const TLS_PEM_PATH = "./tls/tls.crt"
@@ -24,8 +24,8 @@ func ServeGRPC(server *grpc.Server) error {
 	return server.Serve(lis)
 }
 
-func ServeHTTP(mux *http.ServeMux) error {
-	return http.ListenAndServe(port(HTTP_PORT), mux)
+func ServeHTTPS() error {
+	return http.ListenAndServeTLS(port(HTTPS_PORT), TLS_PEM_PATH, TLS_KEY_PATH, nil)
 }
 
 func EstablishGRPCConn(addr string) (*grpc.ClientConn, error) {

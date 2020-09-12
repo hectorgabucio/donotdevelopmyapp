@@ -56,9 +56,8 @@ func main() {
 	authServer.init()
 	defer authServer.userRepository.CloseConn()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/login", authServer.handleGoogleLogin)
-	mux.HandleFunc("/callback", authServer.oauthGoogleCallback)
+	http.HandleFunc("/login", authServer.handleGoogleLogin)
+	http.HandleFunc("/callback", authServer.oauthGoogleCallback)
 
 	grpcServer := server.NewGRPC()
 
@@ -70,7 +69,7 @@ func main() {
 	}()
 
 	go func() {
-		log.Fatal(server.ServeHTTP(mux))
+		log.Fatal(server.ServeHTTPS())
 		wg.Done()
 	}()
 

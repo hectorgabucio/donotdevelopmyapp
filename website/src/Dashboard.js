@@ -8,11 +8,6 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import CharacterCard from './components/CharacterCard';
 
 const useStyles = makeStyles({
-  root: {
-    width: 200,
-    height: 300,
-    margin: 5,
-  },
   notFoundRoot: {
     width: 345,
     height: 450,
@@ -72,11 +67,6 @@ export const Dashboard = () => {
     );
   }
 };
-
-async function addNewCharacter() {
-  const resp = await axios.post('/characters');
-  return resp.status === 200 ? resp.data : null;
-}
 
 async function getMyCharacters() {
   const resp = await axios.get('/characters/me');

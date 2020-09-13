@@ -26,6 +26,8 @@ const drawerWidth = 240;
 const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
+    minHeight: '100vh',
+    flexDirection: 'column',
   },
   appBar: {
     zIndex: theme.zIndex.drawer + 1,
@@ -79,8 +81,13 @@ const useStyles = makeStyles((theme) => ({
     ...theme.mixins.toolbar,
   },
   content: {
-    flexGrow: 1,
+    flex: 1,
     padding: theme.spacing(3),
+  },
+  footer: {
+    width: '100%',
+    zIndex: 1301,
+    position: 'relative',
   },
 }));
 
@@ -179,6 +186,14 @@ export default function App() {
             </Route>
           </Switch>
         </main>
+      </div>
+      <div
+        className={
+          classes.footer +
+          ' MuiAppBar-colorPrimary MuiPaper-elevation4 MuiToolbar-regular MuiToolbar-gutters'
+        }
+      >
+        <p>FOOTER</p>
       </div>
     </Router>
   );

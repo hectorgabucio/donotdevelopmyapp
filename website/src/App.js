@@ -119,11 +119,7 @@ export default function App() {
             >
               <MenuIcon />
             </IconButton>
-            <Typography
-              variant="h4"
-              noWrap
-              style={{ 'font-family': 'Schwifty' }}
-            >
+            <Typography variant="h4" noWrap style={{ fontFamily: 'Schwifty' }}>
               Do NOT develop my app
             </Typography>
           </Toolbar>

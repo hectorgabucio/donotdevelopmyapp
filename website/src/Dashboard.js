@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 import axios from 'axios';
-import Button from '@material-ui/core/Button';
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
-import CardActionArea from '@material-ui/core/CardActionArea';
-import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
-import CardMedia from '@material-ui/core/CardMedia';
 import Typography from '@material-ui/core/Typography';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { FormHelperText } from '@material-ui/core';
+import CharacterCard from './components/CharacterCard';
 
 const useStyles = makeStyles({
   root: {
@@ -66,21 +61,11 @@ export const Dashboard = () => {
       <div className={classes.cardsContainer}>
         {characters.map((character) => {
           return (
-            <Card key={character.toString()} className={classes.root}>
-              <CardActionArea>
-                <CardMedia
-                  component="img"
-                  alt="Ricky and Morty image"
-                  image={character.character.image}
-                  title={character.character.name}
-                />
-                <CardContent>
-                  <Typography gutterBottom component="h3">
-                    {character.character.name}
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+            <CharacterCard
+              key={character.toString()}
+              image={character.character.image}
+              name={character.character.name}
+            ></CharacterCard>
           );
         })}
       </div>

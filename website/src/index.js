@@ -5,6 +5,7 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import axios from 'axios';
 import swal from 'sweetalert';
+import './fonts/get_schwifty.ttf';
 
 axios.defaults.baseURL = '/api';
 axios.defaults.withCredentials = true;

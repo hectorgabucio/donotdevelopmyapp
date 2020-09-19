@@ -11,6 +11,7 @@ services:
     depends_on:
       - auth-micro.default.svc.cluster.local
       - backend.default.svc.cluster.local
+    restart: always
 
   auth-micro.default.svc.cluster.local:
     build:

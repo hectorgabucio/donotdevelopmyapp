@@ -14,7 +14,7 @@ const useStyles = makeStyles((theme) => ({
   root: {
     width: 345,
     height: 450,
-    margin: 5,
+    marginLeft: 30,
   },
 }));
 

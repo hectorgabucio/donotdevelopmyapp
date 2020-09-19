@@ -20,6 +20,8 @@ import AddToPhotosIcon from '@material-ui/icons/AddToPhotos';
 import { Dashboard } from './Dashboard';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 import { AddNewCard } from './AddNewCard';
+import rickSanchez from './images/rick-sanchez.png';
+import mortySmith from './images/morty-smith.png';
 
 const drawerWidth = 240;
 
@@ -83,11 +85,22 @@ const useStyles = makeStyles((theme) => ({
   content: {
     flex: 1,
     padding: theme.spacing(3),
+    margin: theme.spacing(4),
   },
   footer: {
     width: '100%',
     zIndex: 1301,
     position: 'relative',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerTextBlock: {
+    textAlign: 'center',
+  },
+  footerLink: {
+    textDecoration: 'none',
+    color: 'white',
   },
 }));
 
@@ -127,7 +140,7 @@ export default function App() {
               <MenuIcon />
             </IconButton>
             <Typography variant="h4" noWrap style={{ fontFamily: 'Schwifty' }}>
-              Do NOT develop my app
+              Do NOT develop my app <img src={mortySmith} width={32}></img>
             </Typography>
           </Toolbar>
         </AppBar>
@@ -187,14 +200,22 @@ export default function App() {
           </Switch>
         </main>
       </div>
-      <div
+      <footer
         className={
           classes.footer +
           ' MuiAppBar-colorPrimary MuiPaper-elevation4 MuiToolbar-regular MuiToolbar-gutters'
         }
       >
-        <p>FOOTER</p>
-      </div>
+        <div className={classes.footerTextBlock}>
+          <a
+            className={classes.footerLink}
+            href="https://github.com/hectorgabucio/donotdevelopmyapp"
+          >
+            Made with ❤️ by hectorgabucio{' '}
+            <img src={rickSanchez} width={24}></img>
+          </a>
+        </div>
+      </footer>
     </Router>
   );
 }

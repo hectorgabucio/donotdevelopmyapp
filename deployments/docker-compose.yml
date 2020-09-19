@@ -74,6 +74,9 @@ services:
       command: start-single-node --insecure
       ports:
           - "8082:8080"
+  
+  redis:
+    image: "redis:alpine"
 
 networks:
     cockroachdb_net:

@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
+	"github.com/hectorgabucio/donotdevelopmyapp/internal/data"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/server"
-	"github.com/patrickmn/go-cache"
 )
 
 type App struct {
-	Api   ApiController
-	Cache *cache.Cache
+	Api         ApiController
+	CacheClient data.CacheClient
 }
 
 type ApiController interface {
@@ -39,9 +39,10 @@ func (api *ApiClient) Get(path string) (*http.Response, error) {
 func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*character.Output, error) {
 	log.Printf("received call for input %s", input.Number)
 
-	if x, found := a.Cache.Get(input.Number); found {
+	var characterCache *character.Output
+	if err := a.CacheClient.Get(input.Number, characterCache); err == nil {
 		log.Println("Getting from cache...")
-		return x.(*character.Output), nil
+		return characterCache, nil
 	}
 
 	path := fmt.Sprintf("%s%s", a.Api.GetBaseUrl(), input.Number)
@@ -60,7 +61,9 @@ func (a *App) GetCharacter(ctx context.Context, input *character.Input) (*charac
 	}
 
 	if character.Name != "" {
-		a.Cache.Set(input.Number, character, cache.NoExpiration)
+		if err := a.CacheClient.Set(input.Number, character, time.Hour*24); err != nil {
+			log.Println("Error while saving to cache: ", err.Error())
+		}
 	}
 
 	return character, nil
@@ -74,9 +77,10 @@ func main() {
 			Timeout: time.Second * 10,
 		},
 	}
-	c := cache.New(cache.NoExpiration, 10*time.Minute)
 
-	app := &App{Api: &apiClient, Cache: c}
+	c := data.NewCacheClient()
+
+	app := &App{Api: &apiClient, CacheClient: c}
 
 	grpcServer := server.NewGRPC()
 	character.RegisterCharacterServiceServer(grpcServer, app)

@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"encoding/json"
+	"log"
 	"sync"
 	"time"
 
@@ -15,20 +17,28 @@ var (
 )
 
 type CacheClient interface {
-	Set(key string, value string, expiration time.Duration) error
-	Get(key string) (string, error)
+	Set(key string, value interface{}, expiration time.Duration) error
+	Get(key string, src interface{}) error
 }
 
 type RedisClient struct {
 	client *redis.Client
 }
 
-func (r *RedisClient) Set(key string, value string, expiration time.Duration) error {
-	return r.client.Set(context.Background(), key, value, expiration).Err()
+func (r *RedisClient) Set(key string, value interface{}, expiration time.Duration) error {
+	cacheEntry, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return r.client.Set(context.Background(), key, cacheEntry, expiration).Err()
 }
 
-func (r *RedisClient) Get(key string) (string, error) {
-	return r.client.Get(context.Background(), key).Result()
+func (r *RedisClient) Get(key string, src interface{}) error {
+	val, err := r.client.Get(context.Background(), key).Result()
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(val), &src)
 }
 
 func NewCacheClient() CacheClient {
@@ -43,6 +53,10 @@ func initConnectionCache() CacheClient {
 			Password: "", // no password set
 			DB:       0,  // use default DB
 		})
+
+		if err := conn.Ping(context.Background()).Err(); err != nil {
+			log.Fatalf("Unable to connect to redis : %s\n", err)
+		}
 
 		instanceCache = &RedisClient{client: conn}
 	})

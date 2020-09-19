@@ -84,8 +84,7 @@ const useStyles = makeStyles((theme) => ({
   },
   content: {
     flex: 1,
-    padding: theme.spacing(3),
-    margin: theme.spacing(4),
+    margin: theme.spacing(3, 0, 0, 12),
   },
   footer: {
     width: '100%',

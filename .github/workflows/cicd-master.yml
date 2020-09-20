@@ -45,6 +45,7 @@ jobs:
           node-version: 12
       - run: make test-front
   setup-build-publish-deploy:
+    needs: [frontTest, goTest, golangci]
     name: Setup, Build, Publish, and Deploy
     runs-on: ubuntu-latest
 

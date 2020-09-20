@@ -32,13 +32,7 @@ clean:
 ## Run golangci-lint on codebase.
 .PHONY: golangci-lint
 golangci-lint:
-	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://golangci-lint.run/usage/install/#ci-installation for installation instructions."; \
-		exit 1; \
-	fi; \
-
-	@echo Running golangci-lint
-	golangci-lint run ./...
+	docker run --rm -v $(CUR_DIR):/app -w /app golangci/golangci-lint:v1.31.0 golangci-lint run ./...
 
 ## Runs any lints and unit tests defined for the server, if they exist.
 .PHONY: test-back
@@ -62,7 +56,7 @@ cov:
 ## Autogenerates mocks
 .PHONY: mocks
 mocks: 
-	docker run -v $(CUR_DIR):/src -w /src vektra/mockery:v2 --all --recursive --output ./test/mocks
+	docker run --rm -v $(CUR_DIR):/src -w /src vektra/mockery:v2 --all --recursive --output ./test/mocks
 
 # Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

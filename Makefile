@@ -1,4 +1,5 @@
 WEBSITE ?= website
+CUR_DIR = $(CURDIR)
 
 all: check-style test
 
@@ -61,7 +62,7 @@ cov:
 ## Autogenerates mocks
 .PHONY: mocks
 mocks: 
-	mockery -all -recursive -output ./test/mocks
+	docker run -v $(CUR_DIR):/src -w /src vektra/mockery:v2 --all --recursive --output ./test/mocks
 
 # Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

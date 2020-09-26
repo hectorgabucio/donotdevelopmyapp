@@ -9,6 +9,7 @@ import Typography from '@material-ui/core/Typography';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 import NotFoundCard from './components/NotFoundCard';
+import LimitReached from './components/LimitReached';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -21,6 +22,7 @@ const useStyles = makeStyles((theme) => ({
 export const AddNewCard = () => {
   const classes = useStyles();
   const [character, setCharacter] = useState(null);
+  const [limitReached, setLimitReached] = useState(false);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     getNewCharacter();
@@ -30,6 +32,28 @@ export const AddNewCard = () => {
     try {
       const character = await addNewCharacter();
       setCharacter(character);
+    } catch (error) {
+      // Error 😨
+      if (error.response) {
+        console.log('server error');
+        if (error.response.status === 503) {
+          console.log('limit reached');
+          setLimitReached(true);
+        }
+      } else if (error.request) {
+        /*
+         * The request was made but no response was received, `error.request`
+         * is an instance of XMLHttpRequest in the browser and an instance
+         * of http.ClientRequest in Node.js
+         */
+        console.log('client error');
+        console.log(error.request);
+      } else {
+        // Something happened in setting up the request and triggered an Error
+        console.log('something happened');
+        console.log('Error', error.message);
+      }
+      console.log(error);
     } finally {
       setLoaded(true);
     }
@@ -39,7 +63,9 @@ export const AddNewCard = () => {
     return <CircularProgress color="secondary" />;
   }
 
-  if (!character) {
+  if (limitReached) {
+    return <LimitReached></LimitReached>;
+  } else if (!character) {
     return <NotFoundCard retry={getNewCharacter}></NotFoundCard>;
   } else {
     return (

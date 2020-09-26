@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 
@@ -17,6 +18,8 @@ var (
 )
 
 type CacheClient interface {
+	GetInt(key string) (int, error)
+	SetInt(key string, value int, expiration time.Duration) error
 	Set(key string, value interface{}, expiration time.Duration) error
 	Get(key string, src interface{}) error
 }
@@ -33,12 +36,27 @@ func (r *RedisClient) Set(key string, value interface{}, expiration time.Duratio
 	return r.client.Set(context.Background(), key, cacheEntry, expiration).Err()
 }
 
+func (r *RedisClient) SetInt(key string, value int, expiration time.Duration) error {
+	return r.client.Set(context.Background(), key, value, expiration).Err()
+}
+
 func (r *RedisClient) Get(key string, src interface{}) error {
 	val, err := r.client.Get(context.Background(), key).Result()
 	if err != nil {
 		return err
 	}
 	return json.Unmarshal([]byte(val), &src)
+}
+
+func (r *RedisClient) GetInt(key string) (int, error) {
+	val, err := r.client.Get(context.Background(), key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return strconv.Atoi(val)
 }
 
 func NewCacheClient() CacheClient {

@@ -27,12 +27,47 @@ func (_m *CacheClient) Get(key string, src interface{}) error {
 	return r0
 }
 
+// GetInt provides a mock function with given fields: key
+func (_m *CacheClient) GetInt(key string) (int, error) {
+	ret := _m.Called(key)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(string) int); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Set provides a mock function with given fields: key, value, expiration
 func (_m *CacheClient) Set(key string, value interface{}, expiration time.Duration) error {
 	ret := _m.Called(key, value, expiration)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, interface{}, time.Duration) error); ok {
+		r0 = rf(key, value, expiration)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SetInt provides a mock function with given fields: key, value, expiration
+func (_m *CacheClient) SetInt(key string, value int, expiration time.Duration) error {
+	ret := _m.Called(key, value, expiration)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, int, time.Duration) error); ok {
 		r0 = rf(key, value, expiration)
 	} else {
 		r0 = ret.Error(0)

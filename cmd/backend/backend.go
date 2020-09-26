@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/auth"
 	"github.com/hectorgabucio/donotdevelopmyapp/internal/character"
@@ -21,8 +22,11 @@ const COOKIE_JWT_NAME = "DONOTDEVELOPMYAPPJWT"
 
 const HEADER_USER = "X-User-ID"
 
+const MAX_RETRIES = 3
+
 type app struct {
 	randomClient    random.RandomServiceClient
+	cacheClient     data.CacheClient
 	characterClient character.CharacterServiceClient
 	authClient      auth.AuthServiceClient
 	userRepository  data.UserRepository
@@ -53,6 +57,32 @@ func logMiddleware(next http.Handler) http.Handler {
 		log.Printf("Received new request: %s", r.URL.RequestURI())
 		next.ServeHTTP(w, r)
 		log.Printf("Sending response...")
+	})
+}
+
+func (app *app) retriesCheckMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Header.Get(HEADER_USER)
+		cacheKey := userID + "_RETRY"
+		log.Println("checking if user", userID, "is limited on retries")
+
+		tries, err := app.cacheClient.GetInt(cacheKey)
+		if err != nil {
+			log.Println("Error while getting retries from cache, aborting:", err)
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+		log.Println("Tries from player", userID, ": ", tries)
+		if tries > MAX_RETRIES {
+			log.Println("Max retries reached")
+			http.Error(w, "Max retries reached", http.StatusServiceUnavailable)
+			return
+		}
+		next.ServeHTTP(w, r)
+		log.Println("Incrementing tries counter for player", userID)
+		if err := app.cacheClient.SetInt(cacheKey, tries+1, time.Hour*24); err != nil {
+			log.Println("error incrementing try counter for player", userID, ": ", err)
+		}
 	})
 }
 
@@ -182,11 +212,13 @@ func main() {
 	defer connAuth.Close()
 	authClient := auth.NewAuthServiceClient(connAuth)
 
-	app := &app{randomClient: randomClient, characterClient: characterClient, authClient: authClient, userRepository: data.NewUserRepository()}
+	cacheClient := data.NewCacheClient()
+
+	app := &app{randomClient: randomClient, characterClient: characterClient, authClient: authClient, userRepository: data.NewUserRepository(), cacheClient: cacheClient}
 	handlerAddNewCharacter := http.HandlerFunc(app.AddNewCharacterForUser)
 	handlerGetCharactersOfUser := http.HandlerFunc(app.GetCharactersOfUser)
 
-	http.Handle("/characters", corsMiddleware(app.securedMiddleware((logMiddleware(handlerAddNewCharacter)))))
+	http.Handle("/characters", corsMiddleware(app.securedMiddleware((app.retriesCheckMiddleware(logMiddleware(handlerAddNewCharacter))))))
 	http.Handle("/characters/me", corsMiddleware(app.securedMiddleware((logMiddleware(handlerGetCharactersOfUser)))))
 	log.Fatal(server.ServeHTTPS())
 }

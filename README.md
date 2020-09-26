@@ -2,6 +2,23 @@
 
 - Visit https://www.donot.cards and have fun!
 
+# Features
+- Collect new Rick and Morty cards.
+- List all your cards login with your Google account.
+
+# Tech overview
+- Go backend.
+- React frontend.
+- CockroachDB as database.
+- Microservices.
+- All dockerised.
+- Communication with GRPC and/or HTTP
+- Google Sign In.
+- CI/CD with Github Actions.
+- Test coverage (both backend and front).
+- Google cloud deployment (GKE).
+- Run locally with docker compose.
+
 # How to run the project locally
 
 - Make sure you have Docker and docker-compose installed.

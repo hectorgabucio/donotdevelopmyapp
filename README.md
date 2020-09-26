@@ -17,6 +17,7 @@
 - CI/CD with Github Actions.
 - Test coverage (both backend and front).
 - Google cloud deployment (GKE).
+- Kubernetes on live environment.
 - Run locally with docker compose.
 
 # How to run the project locally

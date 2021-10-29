@@ -32,7 +32,7 @@ clean:
 ## Run golangci-lint on codebase.
 .PHONY: golangci-lint
 golangci-lint:
-	docker run --rm -v $(CUR_DIR):/app -w /app golangci/golangci-lint:v1.31.0 golangci-lint run ./...
+	docker run --rm -v $(CUR_DIR):/app -w /app golangci/golangci-lint:latest golangci-lint run -v
 
 ## Runs any lints and unit tests defined for the server, if they exist.
 .PHONY: test-back

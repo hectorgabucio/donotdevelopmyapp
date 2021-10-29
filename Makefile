@@ -23,7 +23,7 @@ check-style: golangci-lint
 ## Runs a local environment using docker-compose
 .PHONY: start
 start: check-style
-	docker-compose -f deployments/docker-compose.yml up --build
+	docker-compose -f deployments/docker-compose.yml up
 
 ## Removes volumes and all containers
 .PHONY: clean

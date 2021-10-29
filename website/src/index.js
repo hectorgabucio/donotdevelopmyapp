@@ -19,8 +19,7 @@ axios.interceptors.response.use(
     if (401 === error.response.status) {
       swal({
         title: 'Session Expired',
-        text:
-          'Your session has expired. You are going to be redirected to the login page',
+        text: 'Your session has expired. You are going to be redirected to the login page',
         icon: 'warning',
         button: 'OK',
       })

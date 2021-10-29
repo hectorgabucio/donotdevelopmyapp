@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine AS build_base
+FROM golang:1.17-alpine AS build_base
 
 RUN apk add --no-cache git
 
@@ -19,10 +19,6 @@ ENV PROJECT $project
 ENV GOOS linux
 ENV CGO_ENABLED 0
 ENV GOARCH amd64
-
-
-# Unit tests
-#RUN go test -v $project
 
 # Build the Go app
 RUN go build -o ./out/app $project

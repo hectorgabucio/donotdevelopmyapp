@@ -57,6 +57,8 @@ services:
         project: ./cmd/characters/
     volumes:
       - ../tls:/tls:ro
+    depends_on: 
+      - redis-master.default.svc.cluster.local
 
   random-micro.default.svc.cluster.local:
     build:

@@ -1,7 +1,3 @@
-# Live project on GKE
-
-- Visit https://www.donot.cards and have fun!
-
 # Features
 - Collect new Rick and Morty cards.
 - List all your cards login with your Google account.

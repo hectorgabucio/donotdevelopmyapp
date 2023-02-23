@@ -25,8 +25,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.opentelemetry.io/otel v0.11.0 // indirect
 	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7 // indirect
-	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299 // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/text v0.3.8 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect

@@ -1,6 +1,5 @@
 version: '3.2'
 services:
-
   website:
     build:
       context: ../website
@@ -11,7 +10,7 @@ services:
     depends_on:
       - auth-micro.default.svc.cluster.local
       - backend.default.svc.cluster.local
-    restart: always
+    restart: on-failure
 
   auth-micro.default.svc.cluster.local:
     build:
@@ -30,7 +29,7 @@ services:
       - ../tls:/tls:ro
     depends_on:
       - my-release-cockroachdb-public.default.svc.cluster.local
-    restart: always
+    restart: on-failure
 
 
   backend.default.svc.cluster.local:
@@ -49,6 +48,8 @@ services:
       - random-micro.default.svc.cluster.local
       - my-release-cockroachdb-public.default.svc.cluster.local
       - auth-micro.default.svc.cluster.local
+    restart: on-failure
+
 
   character-micro.default.svc.cluster.local:
     build:
@@ -60,6 +61,8 @@ services:
       - ../tls:/tls:ro
     depends_on: 
       - redis-master.default.svc.cluster.local
+    restart: on-failure
+
 
   random-micro.default.svc.cluster.local:
     build:
@@ -69,17 +72,23 @@ services:
         project: ./cmd/random-micro/
     volumes:
       - ../tls:/tls:ro
+    restart: on-failure
+
 
   my-release-cockroachdb-public.default.svc.cluster.local:
-      image: cockroachdb/cockroach:latest
-      volumes:
-          - ./data/db:/cockroach/cockroach-data
-      command: start-single-node --insecure
-      ports:
-          - "8082:8080"
+    image: cockroachdb/cockroach:latest
+    volumes:
+        - ./data/db:/cockroach/cockroach-data
+    command: start-single-node --insecure
+    ports:
+        - "8082:8080"
+    restart: on-failure
+
   
   redis-master.default.svc.cluster.local:
     image: "redis:alpine"
+    restart: on-failure
+
 
 networks:
     cockroachdb_net:

@@ -30,6 +30,7 @@ services:
       - ../tls:/tls:ro
     depends_on:
       - my-release-cockroachdb-public.default.svc.cluster.local
+    restart: always
 
 
   backend.default.svc.cluster.local:
